@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinAgent Hackathon - Round 1 Submission</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap');
+        
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #dd6b20;
+            --success: #276749;
+            --warning: #975a16;
+            --danger: #c53030;
+            --bg-light: #f7fafc;
+            --text-dark: #1a202c;
+            --text-light: #4a5568;
+            --border: #e2e8f0;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @page { size: A4; margin: 12mm 15mm; }
+        
+        @media print {
+            body { font-size: 9pt; line-height: 1.3; }
+            .page-break { page-break-before: always; }
+            .no-print { display: none !important; }
+            h1, h2, h3, h4 { page-break-after: avoid; }
+            .diagram-box, table { page-break-inside: avoid; }
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 9pt;
+            line-height: 1.35;
+            color: var(--text-dark);
+            background: white;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        
+        /* Cover Page - Compact */
+        .cover-page {
+            text-align: center;
+            padding: 30px 20px;
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
+        }
+        .cover-logo { font-size: 32px; margin-bottom: 8px; }
+        .cover-title { font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+        .cover-subtitle { font-size: 11pt; color: var(--text-light); margin-bottom: 15px; }
+        .cover-tagline { font-size: 9pt; background: white; padding: 8px 20px; border-radius: 20px; display: inline-block; border: 1px solid var(--primary); color: var(--primary); font-weight: 600; margin-bottom: 15px; }
+        .cover-info { background: white; padding: 15px 25px; border-radius: 8px; text-align: left; display: inline-block; border: 1px solid var(--border); }
+        .cover-info p { margin: 4px 0; font-size: 9pt; }
+        .cover-info strong { display: inline-block; width: 100px; }
+        
+        /* Headers - Compact */
+        h1 { font-size: 14pt; color: var(--primary); margin: 12px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); }
+        h2 { font-size: 11pt; color: var(--primary); margin: 10px 0 6px; display: flex; align-items: center; gap: 6px; }
+        h2::before { content: ""; width: 3px; height: 14px; background: var(--accent); border-radius: 1px; }
+        h3 { font-size: 10pt; color: var(--primary-light); margin: 8px 0 4px; }
+        h4 { font-size: 9pt; font-weight: 600; color: var(--text-dark); margin: 6px 0 4px; }
+        
+        p { margin-bottom: 6px; color: var(--text-light); font-size: 9pt; }
+        strong { color: var(--text-dark); font-weight: 600; }
+        ul, ol { margin: 4px 0 6px 18px; font-size: 9pt; color: var(--text-light); }
+        li { margin-bottom: 2px; }
+        
+        /* Tables - Compact */
+        table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 8pt; }
+        thead { background: var(--primary); color: white; }
+        th { padding: 6px 8px; text-align: left; font-weight: 600; }
+        td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
+        tbody tr:nth-child(even) { background: var(--bg-light); }
+        
+        /* Diagram - Compact */
+        .diagram-box {
+            background: #fafbfc;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 8px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 7pt;
+            line-height: 1.25;
+            white-space: pre;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+        
+        .flow-box { background: var(--bg-light); border-left: 3px solid var(--accent); padding: 8px 12px; margin: 8px 0; border-radius: 0 4px 4px 0; }
+        .flow-box p { margin: 3px 0; font-size: 8pt; }
+        
+        .highlight-box { background: #fffaf0; border: 1px solid var(--accent); border-radius: 4px; padding: 10px; margin: 8px 0; }
+        .highlight-box.success { background: #f0fff4; border-color: var(--success); }
+        .highlight-box.warning { background: #fffff0; border-color: var(--warning); }
+        .highlight-box.danger { background: #fff5f5; border-color: var(--danger); }
+        .highlight-box p { margin: 4px 0; }
+        .highlight-box h4 { margin: 0 0 6px 0; }
+        
+        .feature-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 8px 0; }
+        .feature-card { background: var(--bg-light); padding: 8px 10px; border-radius: 4px; border: 1px solid var(--border); }
+        .feature-card h4 { color: var(--primary); margin: 0 0 4px 0; font-size: 8pt; }
+        .feature-card p { font-size: 8pt; margin: 0; }
+        .feature-card ul { margin: 2px 0 0 12px; font-size: 8pt; }
+        .feature-card li { margin-bottom: 1px; }
+        
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        .badge { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 7pt; font-weight: 600; text-transform: uppercase; }
+        .badge.high { background: #fed7d7; color: var(--danger); }
+        .badge.medium { background: #fefcbf; color: var(--warning); }
+        .badge.low { background: #c6f6d5; color: var(--success); }
+        
+        .section { margin-bottom: 12px; }
+        .footer { text-align: center; padding: 10px; margin-top: 15px; border-top: 1px solid var(--border); font-size: 8pt; color: var(--text-light); }
+        
+        .print-btn { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+        .print-btn:hover { background: var(--primary-light); }
+        
+        .arch-diagram { background: #fafbfc; padding: 12px; border-radius: 6px; margin: 8px 0; border: 1px solid var(--primary); }
+        .arch-title { text-align: center; font-size: 9pt; font-weight: 600; color: var(--primary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">📄 Print to PDF</button>
+
+    <!-- PAGE 1: Cover + Executive Summary -->
+    <div class="cover-page">
+    
+        <h1 class="cover-title">FinAgent</h1>
+        <p class="cover-subtitle">Browser-Based Action Agent for Financial Workflow Automation</p>
+        <p class="cover-tagline"> Agentic AI That Acts, Not Just Chats</p>
+        <div class="cover-info">
+            <p><strong>Event:</strong> FinAgent Hackathon - Techfest IIT Bombay</p>
+            <p><strong>Collaboration:</strong> Jio Financial Services</p>
+            <p><strong>Round:</strong> 1 - Abstract & Design Strategy</p>
+            <p><strong>Team Name:</strong> Optimistic Mutant Coders</p>
+            <p><strong>Team ID:</strong> Fina-250336</p>
+            <p><strong>Date:</strong> 10 December 2025</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h1>1. Executive Summary</h1>
+        <p><strong>FinAgent</strong> is an intelligent Browser-Based Action Agent that transforms natural language commands into real financial actions. Unlike chatbots that provide instructions, FinAgent actively performs tasks—navigating websites, filling forms, and executing transactions with human oversight for critical operations.</p>
+        
+        <div class="highlight-box">
+            <p><strong>Core Innovation:</strong> We leverage <strong>Vision-Language Models (VLMs)</strong> + <strong>Large Action Models (LAMs)</strong> to create an agent that "sees" web interfaces like a human, rather than relying on brittle HTML parsing. This enables adaptability to UI changes.</p>
+        </div>
+        
+        <div class="feature-grid">
+            <div class="feature-card"><h4>Visual UI Understanding</h4><p>GPT-4o Vision for screenshot-based element detection</p></div>
+            <div class="feature-card"><h4>Intelligent Planning</h4><p>LangGraph-based multi-step workflow orchestration</p></div>
+            <div class="feature-card"><h4>Safety-First Design</h4><p>Conscious Pause with context-aware risk assessment</p></div>
+            <div class="feature-card"><h4>Resilient Execution</h4><p>Self-healing automation with error recovery</p></div>
+        </div>
+    </div>
+
+    <!-- PAGE 2: Architecture -->
+    <div class="section page-break">
+        <h1>2. System Architecture</h1>
+        
+        <div class="arch-diagram">
+            <div class="arch-title">FinAgent System Architecture</div>
+<pre style="font-size: 7pt; line-height: 1.2;">
+┌──────────────────────────────────────────────────────────────────────────┐
+│                      USER DASHBOARD (Next.js + React)                     │
+│  ┌────────────┐  ┌───────────────┐  ┌─────────────────────────────────┐  │
+│  │ Voice/Text │  │ Live Activity │  │   Conscious Pause Panel         │  │
+│  │   Input    │  │     Feed      │  │  [Approve] [Reject] [Modify]    │  │
+│  └─────┬──────┘  └───────▲───────┘  └──────────────▲──────────────────┘  │
+└────────┼─────────────────┼─────────────────────────┼─────────────────────┘
+         │                 │                         │
+         ▼                 │                         │
+┌──────────────────────────────────────────────────────────────────────────┐
+│                    ORCHESTRATION LAYER (LangGraph)                        │
+│     [IDLE] → [PLANNING] → [EXECUTING] → [PAUSED] → [CONFIRMING] → [DONE] │
+└──────────────────────────────────────────────────────────────────────────┘
+         │                                           ▲
+         ▼                                           │
+┌──────────────────────────────────────────────────────────────────────────┐
+│                           ACTION BRAIN                                    │
+│  ┌──────────────┐  ┌───────────────┐  ┌────────────────────────────────┐ │
+│  │ Intent Engine│  │ Task Planner  │  │      Risk Assessor             │ │
+│  │   (GPT-4o)   │  │  (LangGraph)  │  │  (Conscious Pause Trigger)     │ │
+│  └──────────────┘  └───────────────┘  └────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                           DIGITAL HAND                                    │
+│  ┌──────────────┐  ┌───────────────┐  ┌────────────────────────────────┐ │
+│  │Vision Module │  │   Browser     │  │     Action Executor            │ │
+│  │(GPT-4o Vision│  │  (Playwright) │  │  (Click/Type/Navigate)         │ │
+│  └──────────────┘  └───────────────┘  └────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                    DUMMY BANKING WEBSITE (localhost)                      │
+└──────────────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+        
+        <h2>Data Flow</h2>
+        <div class="flow-box">
+            <p><strong>User Command</strong> → Speech-to-Text (if voice) → <strong>Intent Engine</strong> → Task Planner → For each step: <strong>Vision Module</strong> (screenshot) → Element Detection → Action Execution → If high-risk → <strong>🛑 Conscious Pause</strong> → User Confirmation → Complete</p>
+        </div>
+
+        <h2>System Components</h2>
+        <table>
+            <thead><tr><th>Component</th><th>Purpose</th><th>Technology</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Intent Engine</strong></td><td>NLU, intent classification, entity extraction</td><td>GPT-4o API</td></tr>
+                <tr><td><strong>Task Planner</strong></td><td>Multi-step workflow orchestration</td><td>LangGraph</td></tr>
+                <tr><td><strong>Vision Module</strong></td><td>Screenshot analysis, element detection</td><td>GPT-4o Vision</td></tr>
+                <tr><td><strong>Browser Controller</strong></td><td>Page control, DOM interaction</td><td>Playwright</td></tr>
+                <tr><td><strong>Risk Assessor</strong></td><td>Detect high-stakes actions, trigger pause</td><td>Custom Rules + LLM</td></tr>
+                <tr><td><strong>Dashboard</strong></td><td>User interface, live feed, approval UI</td><td>Next.js + React</td></tr>
+            </tbody>
+        </table>
+
+        <h2>Supported Intents</h2>
+        <table>
+            <thead><tr><th>Intent</th><th>Example Command</th><th>Extracted Entities</th></tr></thead>
+            <tbody>
+                <tr><td>BILL_PAY</td><td>"Pay my electricity bill"</td><td>Biller, Amount, Account</td></tr>
+                <tr><td>FUND_TRANSFER</td><td>"Send ₹500 to Mom"</td><td>Recipient, Amount</td></tr>
+                <tr><td>INVESTMENT</td><td>"Buy ₹1000 Digital Gold"</td><td>Asset Type, Amount</td></tr>
+                <tr><td>PROFILE_UPDATE</td><td>"Change my phone number"</td><td>Field, New Value</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGE 3: Workflow Strategy -->
+    <div class="section page-break">
+        <h1>3. Workflow Strategy - "Invest ₹1000 in Digital Gold"</h1>
+        
+        <div class="diagram-box">
+                              ┌─────────────┐
+                              │    START    │
+                              └──────┬──────┘
+                                     ▼
+                        ┌────────────────────────┐
+                        │  User: "Invest ₹1000   │
+                        │  in Digital Gold"      │
+                        └───────────┬────────────┘
+                                    ▼
+                        ┌────────────────────────┐
+                        │    INTENT ENGINE       │
+                        │  Intent: INVESTMENT    │
+                        │  Asset: Digital Gold   │
+                        │  Amount: ₹1000         │
+                        └───────────┬────────────┘
+                                    ▼
+        ┌───────────────────────────┼───────────────────────────┐
+        ▼                           ▼                           ▼
+┌───────────────┐         ┌───────────────┐         ┌───────────────┐
+│   Step 1:     │         │   Step 2:     │         │   Step 3:     │
+│  Open Bank    │    →    │  Navigate to  │    →    │  Click Gold   │
+│   Website     │         │  Investments  │         │   Section     │
+└───────────────┘         └───────────────┘         └───────┬───────┘
+                                                            ▼
+                                                  ┌───────────────┐
+                                                  │   Step 4:     │
+                                                  │  Enter ₹1000  │
+                                                  └───────┬───────┘
+                                                          ▼
+                                                  ┌───────────────┐
+                                                  │  Validate?    │──NO──→ Ask User
+                                                  └───────┬───────┘        Correct Amt
+                                                    YES   │
+                                                          ▼
+                                                  ┌───────────────┐
+                                                  │ Step 5: Click │
+                                                  │   "Buy Now"   │
+                                                  └───────┬───────┘
+                                                          ▼
+                                          ╔═══════════════════════════╗
+                                          ║  🛑 CONSCIOUS PAUSE       ║
+                                          ║  HIGH RISK DETECTED       ║
+                                          ╚═══════════╦═══════════════╝
+                                                      │
+                              ┌────────────────────────┼────────────────────────┐
+                              ▼                        ▼                        ▼
+                       [✓ APPROVE]              [✗ REJECT]              [✎ MODIFY]
+                              │                        │                        │
+                              ▼                        ▼                        ▼
+                       Execute Purchase          Abort Task            Update Amount
+                              │                                               │
+                              ▼                                               │
+                        ┌───────────┐                                         │
+                        │  SUCCESS  │◄────────────────────────────────────────┘
+                        └───────────┘
+        </div>
+
+        <h2>Step-by-Step Execution</h2>
+        <table>
+            <thead><tr><th>Step</th><th>Action</th><th>Vision Check</th><th>Error Handler</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>Launch browser, go to bank URL</td><td>Verify homepage loads</td><td>Retry with timeout</td></tr>
+                <tr><td>2</td><td>Click "Investments" menu</td><td>Find via screenshot</td><td>Search alternate nav</td></tr>
+                <tr><td>3</td><td>Select "Digital Gold"</td><td>Verify gold page</td><td>Check similar options</td></tr>
+                <tr><td>4</td><td>Enter amount ₹1000</td><td>Validate input</td><td>Handle input issues</td></tr>
+                <tr><td>5</td><td>Click "Buy Now"</td><td>Detect confirmation</td><td><span class="badge high">TRIGGER PAUSE</span></td></tr>
+                <tr><td>6</td><td>Confirm purchase (after approval)</td><td>Verify success</td><td>Report status</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGE 4: Conscious Pause + Tech Stack -->
+    <div class="section page-break">
+        <h1>4. Conscious Pause Mechanism</h1>
+        
+        <div class="highlight-box danger">
+            <h4>Core Safety Principle</h4>
+            <p>The Conscious Pause ensures <strong>no high-stakes action executes without explicit human approval</strong>. This is the most critical evaluation metric.</p>
+        </div>
+        
+        <div class="two-col">
+            <div>
+                <h4>Trigger Keywords:</h4>
+                <ul>
+                    <li>"Pay" / "Payment" / "Transfer"</li>
+                    <li>"Submit" / "Confirm" / "Buy"</li>
+                    <li>"Invest" / "Delete" / "Remove"</li>
+                </ul>
+            </div>
+            <div>
+                <h4>Amount Thresholds:</h4>
+                <ul>
+                    <li>&lt; ₹100: <span class="badge low">Low</span></li>
+                    <li>₹100-₹1000: <span class="badge medium">Medium</span></li>
+                    <li>&gt; ₹1000: <span class="badge high">High</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>Risk Categories</h2>
+        <table>
+            <thead><tr><th>Category</th><th>Triggers</th><th>Risk</th><th>Pause Required</th></tr></thead>
+            <tbody>
+                <tr><td>Fund Transfer</td><td>transfer, send, pay</td><td><span class="badge high">HIGH</span></td><td>Always</td></tr>
+                <tr><td>Investment</td><td>buy, invest, purchase</td><td><span class="badge high">HIGH</span></td><td>Always</td></tr>
+                <tr><td>Bill Payment</td><td>pay bill, payment</td><td><span class="badge medium">MED</span></td><td>Amount &gt; ₹500</td></tr>
+                <tr><td>Profile Change</td><td>update, change</td><td><span class="badge medium">MED</span></td><td>Critical fields</td></tr>
+                <tr><td>Navigation</td><td>view, check, show</td><td><span class="badge low">LOW</span></td><td>Never</td></tr>
+            </tbody>
+        </table>
+
+        <div class="feature-grid">
+            <div class="feature-card"><h4>No Silent Transactions</h4><p>Every financial action requires explicit approval</p></div>
+            <div class="feature-card"><h4>Timeout Protection</h4><p>Auto-cancel after 2 minutes of no response</p></div>
+            <div class="feature-card"><h4>State Preservation</h4><p>Full context saved for user decision</p></div>
+            <div class="feature-card"><h4>Audit Trail</h4><p>All pause events and decisions logged</p></div>
+        </div>
+
+        <h1>5. Tech Stack Selection & Justification</h1>
+        
+        <table>
+            <thead><tr><th>Component</th><th>Choice</th><th>Justification</th></tr></thead>
+            <tbody>
+                <tr><td><strong>AI Brain</strong></td><td>GPT-4o + Vision</td><td>Best multimodal understanding; sees UI like human</td></tr>
+                <tr><td><strong>Orchestration</strong></td><td>LangGraph</td><td>State machine; perfect for conditional workflows</td></tr>
+                <tr><td><strong>Automation</strong></td><td>Playwright</td><td>Faster than Selenium, built-in smart waiting</td></tr>
+                <tr><td><strong>Voice Input</strong></td><td>Web Speech API + Whisper</td><td>Native browser + high accuracy fallback</td></tr>
+                <tr><td><strong>Backend</strong></td><td>Python FastAPI</td><td>Async, easy LangChain integration</td></tr>
+                <tr><td><strong>Frontend</strong></td><td>Next.js + React</td><td>Real-time updates, WebSocket support</td></tr>
+            </tbody>
+        </table>
+
+        <h2>Why Vision API over DOM Parsing?</h2>
+        <div class="two-col">
+            <div class="highlight-box">
+                <h4>❌ Standard DOM Approach</h4>
+                <ul><li>Parse HTML DOM</li><li>Find by selector</li><li>Brittle to UI changes</li><li>Fails on dynamic content</li></ul>
+            </div>
+            <div class="highlight-box success">
+                <h4>✅ Vision API Approach</h4>
+                <ul><li>Screenshot page</li><li>Ask "Where is button?"</li><li>Robust to UI changes</li><li>Handles dynamic elements</li></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 5: Error Handling + Security + Team -->
+    <div class="section page-break">
+        <h1>6. Error Handling Strategy</h1>
+        
+        <div class="highlight-box success">
+            <h4>Tier 1: Automatic Recovery</h4>
+            <table>
+                <thead><tr><th>Error</th><th>Detection</th><th>Recovery</th></tr></thead>
+                <tbody>
+                    <tr><td>Slow Page Load</td><td>Timeout &gt; 10s</td><td>Retry with longer wait</td></tr>
+                    <tr><td>Element Not Found</td><td>Selector fails</td><td>Re-screenshot + re-find</td></tr>
+                    <tr><td>Pop-up Interrupt</td><td>Unexpected modal</td><td>Close/dismiss + retry</td></tr>
+                    <tr><td>Session Timeout</td><td>Login redirect</td><td>Re-authenticate</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="highlight-box warning">
+            <h4>Tier 2: User Intervention</h4>
+            <table>
+                <thead><tr><th>Error</th><th>Detection</th><th>User Action</th></tr></thead>
+                <tbody>
+                    <tr><td>Invalid Amount</td><td>Negative/zero</td><td>"Please enter valid amount"</td></tr>
+                    <tr><td>Insufficient Balance</td><td>Error message</td><td>"Balance low, proceed?"</td></tr>
+                    <tr><td>CAPTCHA/OTP</td><td>Input detected</td><td>"Please complete verification"</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="highlight-box danger">
+            <h4>Tier 3: Graceful Abort</h4>
+            <p>Unrecoverable errors (3+ failures), security blocks, browser crashes → Log, notify user, safe exit with state save.</p>
+        </div>
+
+        <h1>7. Security Considerations</h1>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>Data Protection</h4>
+                <ul><li>No credential storage in memory</li><li>Session-based auth only</li><li>HTTPS/WSS encrypted</li><li>Masked logs (****1234)</li></ul>
+            </div>
+            <div class="feature-card">
+                <h4>Action Guardrails</h4>
+                <ul><li>Mandatory Conscious Pause</li><li>Configurable amount limits</li><li>Domain whitelist</li><li>Velocity limits</li></ul>
+            </div>
+            <div class="feature-card">
+                <h4>Hallucination Prevention</h4>
+                <ul><li>Visual verification per step</li><li>State validation</li><li>Explicit confirmations</li><li>No assumptions</li></ul>
+            </div>
+            <div class="feature-card">
+                <h4>Audit & Compliance</h4>
+                <ul><li>Full action logs</li><li>Screenshot per step</li><li>Confirmation records</li><li>Error logs</li></ul>
+            </div>
+        </div>
+
+        <h1>8. Team Information</h1>
+        <table>
+            <thead><tr><th>Role</th><th>Name</th><th>Contact</th></tr></thead>
+            <tbody>
+                <tr><td>Team Lead</td><td>Priyanshu Chaurasia</td><td>priyanshuchaurasiadlw@gmail.com</td></tr>
+                <tr><td>AI/ML Developer</td><td>Amitesh Vishwakarma</td><td>amiteshvishwakarma2006@gmail.com</td></tr>
+                <tr><td>Backend Developer</td><td>Ritesh Yadav</td><td>riteshydv05@gmail.com</td></tr>
+                <tr><td>Frontend Developer</td><td>Rakshita</td><td>neely941565@gmail.com</td></tr>
+            </tbody>
+        </table>
+        <p><strong>Team ID:</strong> Fina-250336</p>
+
+        <h2>Development Timeline</h2>
+        <table>
+            <thead><tr><th>Phase</th><th>Duration</th><th>Deliverable</th></tr></thead>
+            <tbody>
+                <tr><td>Week 1</td><td>Dec 10-14</td><td>Intent Engine + Basic Automation</td></tr>
+                <tr><td>Week 2</td><td>Dec 15-18</td><td>Conscious Pause + Dashboard</td></tr>
+                <tr><td>Week 3</td><td>Dec 19-21</td><td>Integration + Testing + Demo Video</td></tr>
+                <tr><td>Finals</td><td>Dec 22-24</td><td>Live Presentation at IIT Bombay</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p><strong>FinAgent Hackathon - Round 1 Submission</strong> | Techfest IIT Bombay × Jio Financial Services | December 2025</p>
+    </div>
+</body>
+</html>

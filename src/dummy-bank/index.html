@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JioFinance Bank - Dummy Banking Portal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Page -->
+        <div id="login-page" class="page active">
+            <div class="login-container">
+                <div class="bank-logo">
+                    <span class="logo-icon">🏦</span>
+                    <h1>JioFinance Bank</h1>
+                    <p class="tagline">Your Trusted Digital Partner</p>
+                </div>
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="username">Username / Mobile Number</label>
+                        <input type="text" id="username" name="username" placeholder="Enter username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="Enter password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block" id="login-btn">Login Securely</button>
+                    <p class="demo-hint">Demo: Use any username/password to login</p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="dashboard-page" class="page">
+            <nav class="navbar">
+                <div class="nav-brand">
+                    <span class="logo-icon-small">🏦</span>
+                    <span>JioFinance Bank</span>
+                </div>
+                <div class="nav-user">
+                    <span id="user-greeting">Welcome, User</span>
+                    <button class="btn btn-outline" id="logout-btn">Logout</button>
+                </div>
+            </nav>
+
+            <div class="dashboard-container">
+                <!-- Account Summary -->
+                <div class="account-card">
+                    <div class="account-info">
+                        <h3>Savings Account</h3>
+                        <p class="account-number">A/C: XXXX XXXX 1234</p>
+                    </div>
+                    <div class="balance-info">
+                        <p class="balance-label">Available Balance</p>
+                        <p class="balance-amount" id="account-balance">₹ 45,678.50</p>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Menu -->
+                <div class="quick-actions">
+                    <h2>Quick Actions</h2>
+                    <div class="actions-grid">
+                        <button class="action-card" data-action="pay-bills">
+                            <span class="action-icon">💡</span>
+                            <span class="action-label">Pay Bills</span>
+                        </button>
+                        <button class="action-card" data-action="fund-transfer">
+                            <span class="action-icon">💸</span>
+                            <span class="action-label">Fund Transfer</span>
+                        </button>
+                        <button class="action-card" data-action="buy-gold">
+                            <span class="action-icon">🥇</span>
+                            <span class="action-label">Digital Gold</span>
+                        </button>
+                        <button class="action-card" data-action="investments">
+                            <span class="action-icon">📈</span>
+                            <span class="action-label">Investments</span>
+                        </button>
+                        <button class="action-card" data-action="profile">
+                            <span class="action-icon">👤</span>
+                            <span class="action-label">My Profile</span>
+                        </button>
+                        <button class="action-card" data-action="history">
+                            <span class="action-icon">📋</span>
+                            <span class="action-label">Transaction History</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="recent-transactions">
+                    <h2>Recent Transactions</h2>
+                    <div class="transaction-list" id="transaction-list">
+                        <div class="transaction-item">
+                            <div class="txn-icon credit">↓</div>
+                            <div class="txn-details">
+                                <p class="txn-title">Salary Credit</p>
+                                <p class="txn-date">Dec 01, 2025</p>
+                            </div>
+                            <p class="txn-amount credit">+ ₹50,000.00</p>
+                        </div>
+                        <div class="transaction-item">
+                            <div class="txn-icon debit">↑</div>
+                            <div class="txn-details">
+                                <p class="txn-title">Electricity Bill - Adani</p>
+                                <p class="txn-date">Nov 28, 2025</p>
+                            </div>
+                            <p class="txn-amount debit">- ₹1,250.00</p>
+                        </div>
+                        <div class="transaction-item">
+                            <div class="txn-icon debit">↑</div>
+                            <div class="txn-details">
+                                <p class="txn-title">Digital Gold Purchase</p>
+                                <p class="txn-date">Nov 25, 2025</p>
+                            </div>
+                            <p class="txn-amount debit">- ₹2,000.00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pay Bills Page -->
+        <div id="pay-bills-page" class="page">
+            <nav class="navbar">
+                <button class="btn-back" id="bills-back">← Back</button>
+                <span class="page-title">Pay Bills</span>
+                <div class="nav-spacer"></div>
+            </nav>
+
+            <div class="form-container">
+                <h2>Bill Payment</h2>
+                
+                <div class="biller-categories">
+                    <button class="biller-cat active" data-category="electricity">💡 Electricity</button>
+                    <button class="biller-cat" data-category="gas">🔥 Gas</button>
+                    <button class="biller-cat" data-category="water">💧 Water</button>
+                    <button class="biller-cat" data-category="mobile">📱 Mobile</button>
+                    <button class="biller-cat" data-category="broadband">🌐 Broadband</button>
+                </div>
+
+                <form id="bill-pay-form" class="payment-form">
+                    <div class="form-group">
+                        <label for="biller-select">Select Biller</label>
+                        <select id="biller-select" name="biller" required>
+                            <option value="">-- Select Biller --</option>
+                            <option value="adani-power">Adani Power</option>
+                            <option value="tata-power">Tata Power</option>
+                            <option value="reliance-energy">Reliance Energy</option>
+                            <option value="bses-delhi">BSES Delhi</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="consumer-number">Consumer Number / Account ID</label>
+                        <input type="text" id="consumer-number" name="consumer-number" placeholder="Enter consumer number" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bill-amount">Bill Amount (₹)</label>
+                        <input type="number" id="bill-amount" name="amount" placeholder="Enter amount" min="1" required>
+                        <span class="input-hint" id="bill-amount-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="bill-remarks">Remarks (Optional)</label>
+                        <input type="text" id="bill-remarks" name="remarks" placeholder="e.g., December bill">
+                    </div>
+
+                    <div class="payment-summary" id="bill-summary" style="display: none;">
+                        <h3>Payment Summary</h3>
+                        <div class="summary-row">
+                            <span>Biller:</span>
+                            <span id="summary-biller">-</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Consumer No:</span>
+                            <span id="summary-consumer">-</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Amount:</span>
+                            <span id="summary-amount">₹ 0.00</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block" id="pay-bill-btn">
+                        Pay Bill
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Fund Transfer Page -->
+        <div id="fund-transfer-page" class="page">
+            <nav class="navbar">
+                <button class="btn-back" id="transfer-back">← Back</button>
+                <span class="page-title">Fund Transfer</span>
+                <div class="nav-spacer"></div>
+            </nav>
+
+            <div class="form-container">
+                <h2>Transfer Money</h2>
+
+                <div class="beneficiary-list">
+                    <h3>Saved Beneficiaries</h3>
+                    <div class="beneficiary-cards">
+                        <button class="beneficiary-card" data-name="Mom" data-account="9876543210">
+                            <span class="ben-avatar">👩</span>
+                            <span class="ben-name">Mom</span>
+                            <span class="ben-account">****3210</span>
+                        </button>
+                        <button class="beneficiary-card" data-name="Dad" data-account="8765432109">
+                            <span class="ben-avatar">👨</span>
+                            <span class="ben-name">Dad</span>
+                            <span class="ben-account">****2109</span>
+                        </button>
+                        <button class="beneficiary-card" data-name="Friend" data-account="7654321098">
+                            <span class="ben-avatar">🧑</span>
+                            <span class="ben-name">Friend</span>
+                            <span class="ben-account">****1098</span>
+                        </button>
+                    </div>
+                </div>
+
+                <form id="transfer-form" class="payment-form">
+                    <div class="form-group">
+                        <label for="recipient-name">Recipient Name</label>
+                        <input type="text" id="recipient-name" name="recipient" placeholder="Enter recipient name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recipient-account">Account Number</label>
+                        <input type="text" id="recipient-account" name="account" placeholder="Enter account number" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="recipient-ifsc">IFSC Code</label>
+                        <input type="text" id="recipient-ifsc" name="ifsc" placeholder="Enter IFSC code" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transfer-amount">Amount (₹)</label>
+                        <input type="number" id="transfer-amount" name="amount" placeholder="Enter amount" min="1" required>
+                        <span class="input-hint" id="transfer-amount-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transfer-remarks">Remarks (Optional)</label>
+                        <input type="text" id="transfer-remarks" name="remarks" placeholder="e.g., Gift">
+                    </div>
+
+                    <div class="payment-summary" id="transfer-summary" style="display: none;">
+                        <h3>Transfer Summary</h3>
+                        <div class="summary-row">
+                            <span>To:</span>
+                            <span id="transfer-to">-</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Account:</span>
+                            <span id="transfer-account-display">-</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Amount:</span>
+                            <span id="transfer-amount-display">₹ 0.00</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block" id="transfer-btn">
+                        Transfer Money
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Buy Gold Page -->
+        <div id="buy-gold-page" class="page">
+            <nav class="navbar">
+                <button class="btn-back" id="gold-back">← Back</button>
+                <span class="page-title">Digital Gold</span>
+                <div class="nav-spacer"></div>
+            </nav>
+
+            <div class="form-container">
+                <h2>Buy Digital Gold</h2>
+
+                <div class="gold-rate-card">
+                    <div class="gold-icon">🥇</div>
+                    <div class="gold-info">
+                        <p class="gold-label">Current Gold Rate (24K)</p>
+                        <p class="gold-rate" id="gold-rate">₹ 7,250.00 / gram</p>
+                        <p class="gold-update">Last updated: Just now</p>
+                    </div>
+                </div>
+
+                <div class="gold-holdings">
+                    <p>Your Gold Holdings: <strong id="gold-holdings">0.275 grams</strong></p>
+                    <p class="holdings-value">Value: ₹ 1,993.75</p>
+                </div>
+
+                <form id="gold-form" class="payment-form">
+                    <div class="buy-type-toggle">
+                        <button type="button" class="toggle-btn active" data-type="amount">Buy by Amount (₹)</button>
+                        <button type="button" class="toggle-btn" data-type="grams">Buy by Grams</button>
+                    </div>
+
+                    <div class="form-group" id="amount-input-group">
+                        <label for="gold-amount">Amount (₹)</label>
+                        <input type="number" id="gold-amount" name="amount" placeholder="Enter amount" min="1">
+                        <span class="input-hint" id="gold-amount-error"></span>
+                        <p class="conversion-hint" id="grams-hint">You will get: <strong>0.000 grams</strong></p>
+                    </div>
+
+                    <div class="form-group" id="grams-input-group" style="display: none;">
+                        <label for="gold-grams">Grams</label>
+                        <input type="number" id="gold-grams" name="grams" placeholder="Enter grams" min="0.001" step="0.001">
+                        <p class="conversion-hint" id="amount-hint">You will pay: <strong>₹ 0.00</strong></p>
+                    </div>
+
+                    <div class="payment-summary" id="gold-summary" style="display: none;">
+                        <h3>Purchase Summary</h3>
+                        <div class="summary-row">
+                            <span>Gold Rate:</span>
+                            <span>₹ 7,250.00 / gram</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Quantity:</span>
+                            <span id="gold-quantity">0.000 grams</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Total Amount:</span>
+                            <span id="gold-total">₹ 0.00</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block" id="buy-gold-btn">
+                        Buy Gold
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="profile-page" class="page">
+            <nav class="navbar">
+                <button class="btn-back" id="profile-back">← Back</button>
+                <span class="page-title">My Profile</span>
+                <div class="nav-spacer"></div>
+            </nav>
+
+            <div class="form-container">
+                <div class="profile-header">
+                    <div class="profile-avatar">👤</div>
+                    <h2 id="profile-name">John Doe</h2>
+                    <p class="profile-id">Customer ID: JFB123456</p>
+                </div>
+
+                <form id="profile-form" class="payment-form">
+                    <div class="form-group">
+                        <label for="profile-fullname">Full Name</label>
+                        <input type="text" id="profile-fullname" name="fullname" value="John Doe">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile-email">Email Address</label>
+                        <input type="email" id="profile-email" name="email" value="john.doe@email.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile-phone">Mobile Number</label>
+                        <input type="tel" id="profile-phone" name="phone" value="9876543210">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="profile-address">Address</label>
+                        <textarea id="profile-address" name="address" rows="3">123 Main Street, Mumbai, Maharashtra 400001</textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block" id="update-profile-btn">
+                        Update Profile
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div id="success-modal" class="modal">
+            <div class="modal-content success">
+                <div class="modal-icon">✅</div>
+                <h2 id="success-title">Transaction Successful!</h2>
+                <p id="success-message">Your transaction has been completed successfully.</p>
+                <div class="modal-details" id="success-details"></div>
+                <button class="btn btn-primary" id="success-ok-btn">OK</button>
+            </div>
+        </div>
+
+        <!-- Error Modal -->
+        <div id="error-modal" class="modal">
+            <div class="modal-content error">
+                <div class="modal-icon">❌</div>
+                <h2 id="error-title">Transaction Failed</h2>
+                <p id="error-message">Something went wrong. Please try again.</p>
+                <button class="btn btn-primary" id="error-ok-btn">OK</button>
+            </div>
+        </div>
+
+        <!-- Confirmation Modal -->
+        <div id="confirm-modal" class="modal">
+            <div class="modal-content confirm">
+                <div class="modal-icon">⚠️</div>
+                <h2 id="confirm-title">Confirm Transaction</h2>
+                <p id="confirm-message">Are you sure you want to proceed?</p>
+                <div class="modal-details" id="confirm-details"></div>
+                <div class="modal-actions">
+                    <button class="btn btn-outline" id="confirm-cancel-btn">Cancel</button>
+                    <button class="btn btn-primary" id="confirm-proceed-btn">Confirm & Pay</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay">
+            <div class="spinner"></div>
+            <p>Processing...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
