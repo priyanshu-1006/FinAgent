@@ -38,6 +38,7 @@ class IntentParser:
     def __init__(self, use_ai: bool = True):
         self.use_ai = use_ai
         self.ai_client = None
+        self.genai = None
         
         if use_ai:
             self._init_ai_client()
@@ -48,13 +49,24 @@ class IntentParser:
             if config.ai_provider == "openai" and config.openai_api_key:
                 from openai import OpenAI
                 self.ai_client = OpenAI(api_key=config.openai_api_key)
-            elif config.ai_provider == "gemini" and config.gemini_api_key:
+            elif config.ai_provider == "gemini" and config.get_current_api_key():
                 import google.generativeai as genai
-                genai.configure(api_key=config.gemini_api_key)
+                self.genai = genai
+                genai.configure(api_key=config.get_current_api_key())
                 self.ai_client = genai.GenerativeModel(config.gemini_model)
         except ImportError as e:
             print(f"AI library not available: {e}")
             self.ai_client = None
+    
+    def _switch_api_key(self):
+        """Switch to next API key on rate limit"""
+        if self.genai:
+            new_key = config.get_next_api_key()
+            if new_key:
+                self.genai.configure(api_key=new_key)
+                self.ai_client = self.genai.GenerativeModel(config.gemini_model)
+                return True
+        return False
     
     def parse(self, command: str) -> ParsedIntent:
         """Parse a natural language command into a structured intent"""
@@ -69,45 +81,53 @@ class IntentParser:
         return self._parse_with_keywords(command)
     
     def _parse_with_ai(self, command: str) -> Optional[ParsedIntent]:
-        """Use AI to parse the command"""
+        """Use AI to parse the command with retry and key rotation"""
         
         prompt = self._build_parsing_prompt(command)
+        max_retries = len(config.gemini_api_keys) if config.gemini_api_keys else 1
         
-        try:
-            if config.ai_provider == "openai":
-                response = self.ai_client.chat.completions.create(
-                    model=config.openai_model,
-                    messages=[
-                        {"role": "system", "content": "You are a financial action parser. Extract structured intent from user commands."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    response_format={"type": "json_object"}
-                )
-                result = json.loads(response.choices[0].message.content)
+        for attempt in range(max_retries):
+            try:
+                if config.ai_provider == "openai":
+                    response = self.ai_client.chat.completions.create(
+                        model=config.openai_model,
+                        messages=[
+                            {"role": "system", "content": "You are a financial action parser. Extract structured intent from user commands."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        response_format={"type": "json_object"}
+                    )
+                    result = json.loads(response.choices[0].message.content)
+                
+                elif config.ai_provider == "gemini":
+                    response = self.ai_client.generate_content(prompt)
+                    # Extract JSON from response
+                    text = response.text
+                    json_match = re.search(r'\{.*\}', text, re.DOTALL)
+                    if json_match:
+                        result = json.loads(json_match.group())
+                    else:
+                        return None
+                
+                # Validate and create intent
+                action = result.get("action", "unknown")
+                if action in ACTIONS:
+                    return ParsedIntent(
+                        action=action,
+                        confidence=result.get("confidence", 0.9),
+                        parameters=result.get("parameters", {}),
+                        original_command=command,
+                        requires_approval=ACTIONS[action]["requires_approval"]
+                    )
             
-            elif config.ai_provider == "gemini":
-                response = self.ai_client.generate_content(prompt)
-                # Extract JSON from response
-                text = response.text
-                json_match = re.search(r'\{.*\}', text, re.DOTALL)
-                if json_match:
-                    result = json.loads(json_match.group())
-                else:
-                    return None
-            
-            # Validate and create intent
-            action = result.get("action", "unknown")
-            if action in ACTIONS:
-                return ParsedIntent(
-                    action=action,
-                    confidence=result.get("confidence", 0.9),
-                    parameters=result.get("parameters", {}),
-                    original_command=command,
-                    requires_approval=ACTIONS[action]["requires_approval"]
-                )
-        
-        except Exception as e:
-            print(f"AI parsing error: {e}")
+            except Exception as e:
+                error_str = str(e).lower()
+                # Check for rate limit / quota errors
+                if "429" in str(e) or "quota" in error_str or "rate" in error_str or "limit" in error_str:
+                    print(f"⚠️ API quota hit, rotating key...")
+                    if self._switch_api_key():
+                        continue
+                print(f"AI parsing error: {e}")
         
         return None
     

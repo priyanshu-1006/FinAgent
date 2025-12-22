@@ -3,7 +3,6 @@
 
 # Core
 playwright>=1.40.0
-asyncio-compat>=0.1.0
 
 # AI/LLM Integration
 # Gemini (FREE TIER - RECOMMENDED - 1500 req/day)

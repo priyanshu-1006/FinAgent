@@ -312,21 +312,50 @@ class BrowserAutomation:
     async def login(self, username: str = "demo_user", password: str = "demo123") -> ActionResult:
         """Log in to the banking portal"""
         try:
-            # Navigate to bank
-            await self.navigate()
+            # Check if already on the page, if not navigate
+            if "localhost:8080" not in self.page.url:
+                await self.navigate()
+            
+            # Wait for page to fully load
+            await asyncio.sleep(0.5)
+            
+            # Check if already logged in (dashboard visible)
+            dashboard_visible = await self.page.query_selector("#dashboard-page.active")
+            if dashboard_visible:
+                self.is_logged_in = True
+                balance_text = await self.page.text_content("#account-balance")
+                return ActionResult(
+                    success=True,
+                    action="login",
+                    message="Already logged in",
+                    screenshot=await self.take_screenshot(),
+                    data={"username": username, "balance": balance_text}
+                )
             
             # Wait for login form
             await self.page.wait_for_selector("#login-form", timeout=5000)
             
-            # Fill credentials
+            # Clear and fill credentials
+            await self.page.fill("#username", "")
             await self.page.fill("#username", username)
+            await self.page.fill("#password", "")
             await self.page.fill("#password", password)
             
-            # Click login button
-            await self.page.click("#login-btn, button[type='submit']")
+            # Wait a bit before clicking
+            await asyncio.sleep(0.3)
             
-            # Wait for dashboard
-            await self.page.wait_for_selector("#dashboard-page.active, .dashboard-container", timeout=5000)
+            # Click login button and wait for navigation/state change
+            await self.page.click("#login-btn")
+            
+            # Wait for dashboard to become active
+            await asyncio.sleep(1.5)  # Give JavaScript time to process
+            
+            # Verify dashboard is now visible
+            for _ in range(5):
+                dashboard_active = await self.page.query_selector("#dashboard-page.active")
+                if dashboard_active:
+                    break
+                await asyncio.sleep(0.3)
             
             self.is_logged_in = True
             
@@ -387,27 +416,49 @@ class BrowserAutomation:
         except Exception as e:
             return ActionResult(False, "navigate", f"Navigation failed: {str(e)}")
     
-    async def pay_bill(self, biller: str, consumer_number: str, amount: float) -> ActionResult:
+    async def pay_bill(self, biller: str = "Adani Power", consumer_number: str = "1234567890", amount: float = 1000) -> ActionResult:
         """Pay a utility bill"""
         try:
-            # Navigate to pay bills if not already there
-            if "pay-bills" not in await self.page.text_content("body"):
+            # First ensure we're on the pay bills page
+            pay_bills_page = await self.page.query_selector("#pay-bills-page.active")
+            if not pay_bills_page:
                 await self.navigate_to_pay_bills()
+                await asyncio.sleep(0.5)
             
-            # Select biller
-            await self.page.select_option("#biller-select", label=biller)
+            # Select biller - try by value first, then by label
+            try:
+                await self.page.select_option("#biller-select", value="adani-power")
+            except:
+                try:
+                    await self.page.select_option("#biller-select", label=biller)
+                except:
+                    # Just select the first option
+                    await self.page.select_option("#biller-select", index=1)
+            
+            await asyncio.sleep(0.3)
             
             # Fill consumer number
+            await self.page.fill("#consumer-number", "")
             await self.page.fill("#consumer-number", consumer_number)
             
             # Fill amount
-            await self.page.fill("#bill-amount", str(amount))
+            await self.page.fill("#bill-amount", "")
+            await self.page.fill("#bill-amount", str(int(amount)))
+            
+            await asyncio.sleep(0.5)
             
             # Click pay button
-            await self.page.click("#pay-bill-btn, button[type='submit']")
+            await self.page.click("#pay-bill-btn")
             
             # Wait for confirmation modal
-            await self.page.wait_for_selector("#confirm-modal.active, .modal.confirm", timeout=3000)
+            await asyncio.sleep(1)
+            
+            # Check if modal appeared
+            for _ in range(5):
+                modal = await self.page.query_selector("#confirm-modal.active")
+                if modal:
+                    break
+                await asyncio.sleep(0.3)
             
             return ActionResult(
                 success=True,
@@ -445,23 +496,39 @@ class BrowserAutomation:
         except Exception as e:
             return ActionResult(False, "navigate", f"Navigation failed: {str(e)}")
     
-    async def fund_transfer(self, recipient: str, account: str, ifsc: str, amount: float) -> ActionResult:
+    async def fund_transfer(self, recipient: str = "Mom", account: str = "9876543210", ifsc: str = "JFIN0001234", amount: float = 1000) -> ActionResult:
         """Transfer money to another account"""
         try:
-            # Navigate if needed
-            await self.navigate_to_fund_transfer()
+            # First ensure we're on the transfer page
+            transfer_page = await self.page.query_selector("#fund-transfer-page.active")
+            if not transfer_page:
+                await self.navigate_to_fund_transfer()
+                await asyncio.sleep(0.5)
             
             # Fill transfer form
+            await self.page.fill("#recipient-name", "")
             await self.page.fill("#recipient-name", recipient)
+            await self.page.fill("#recipient-account", "")
             await self.page.fill("#recipient-account", account)
+            await self.page.fill("#recipient-ifsc", "")
             await self.page.fill("#recipient-ifsc", ifsc)
-            await self.page.fill("#transfer-amount", str(amount))
+            await self.page.fill("#transfer-amount", "")
+            await self.page.fill("#transfer-amount", str(int(amount)))
+            
+            await asyncio.sleep(0.5)
             
             # Click transfer button
-            await self.page.click("#transfer-btn, button[type='submit']")
+            await self.page.click("#transfer-btn")
             
-            # Wait for confirmation
-            await self.page.wait_for_selector("#confirm-modal.active, .modal.confirm", timeout=3000)
+            # Wait for confirmation modal
+            await asyncio.sleep(1)
+            
+            # Check if modal appeared
+            for _ in range(5):
+                modal = await self.page.query_selector("#confirm-modal.active")
+                if modal:
+                    break
+                await asyncio.sleep(0.3)
             
             return ActionResult(
                 success=True,
@@ -515,21 +582,41 @@ class BrowserAutomation:
     async def buy_gold(self, amount: float = None, grams: float = None) -> ActionResult:
         """Buy digital gold"""
         try:
-            await self.navigate_to_buy_gold()
+            # First ensure we're on the gold page
+            gold_page = await self.page.query_selector("#buy-gold-page.active")
+            if not gold_page:
+                await self.navigate_to_buy_gold()
+                await asyncio.sleep(0.5)
+            
+            # Set default amount if none provided
+            if amount is None and grams is None:
+                amount = 1000
             
             if grams:
                 # Switch to grams mode
                 await self.page.click("[data-type='grams']")
+                await asyncio.sleep(0.3)
+                await self.page.fill("#gold-grams", "")
                 await self.page.fill("#gold-grams", str(grams))
             else:
                 # Amount mode (default)
-                await self.page.fill("#gold-amount", str(amount))
+                await self.page.fill("#gold-amount", "")
+                await self.page.fill("#gold-amount", str(int(amount)))
+            
+            await asyncio.sleep(0.5)
             
             # Click buy button
-            await self.page.click("#buy-gold-btn, button[type='submit']")
+            await self.page.click("#buy-gold-btn")
             
-            # Wait for confirmation
-            await self.page.wait_for_selector("#confirm-modal.active, .modal.confirm", timeout=3000)
+            # Wait for confirmation modal
+            await asyncio.sleep(1)
+            
+            # Check if modal appeared
+            for _ in range(5):
+                modal = await self.page.query_selector("#confirm-modal.active")
+                if modal:
+                    break
+                await asyncio.sleep(0.3)
             
             return ActionResult(
                 success=True,

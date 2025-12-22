@@ -2,10 +2,11 @@
 Vision Module - AI-powered UI Element Detection
 
 This module implements the core innovation of FinAgent:
-- Uses Gemini 1.5 Flash Vision (FREE TIER) to analyze screenshots
+- Uses Gemini 2.0 Flash Vision for analyzing screenshots
 - Finds UI elements like buttons, inputs, and links
 - Returns coordinates for clicking/interacting
 - Provides human-like understanding of web interfaces
+- Supports API key fallback for rate limit handling
 """
 
 import json
@@ -53,25 +54,33 @@ class VisionModule:
     """
     AI Vision for understanding web UI
     
-    Uses Gemini 1.5 Flash (free tier) for:
+    Uses Gemini 2.0 Flash (best vision model) for:
     - Element detection from screenshots
     - Page state analysis
     - Visual verification of actions
+    - Supports automatic API key rotation on rate limits
     """
     
     def __init__(self):
         self.model = None
+        self.genai = None
+        self.current_model_name = None
         self._init_model()
     
     def _init_model(self):
         """Initialize Gemini model for vision"""
         try:
             import google.generativeai as genai
+            self.genai = genai
             
-            if config.gemini_api_key:
-                genai.configure(api_key=config.gemini_api_key)
-                self.model = genai.GenerativeModel(config.vision_model)
-                print(f"✅ Vision Module initialized with {config.vision_model}")
+            api_key = config.get_current_api_key()
+            if api_key:
+                genai.configure(api_key=api_key)
+                self.current_model_name = config.vision_model
+                self.model = genai.GenerativeModel(self.current_model_name)
+                print(f"✅ Vision Module initialized with {self.current_model_name}")
+                if len(config.gemini_api_keys) > 1:
+                    print(f"   📦 {len(config.gemini_api_keys)} API keys available for fallback")
             else:
                 print("⚠️ No Gemini API key found. Vision features disabled.")
                 print("   Get free key at: https://aistudio.google.com/app/apikey")
@@ -79,6 +88,56 @@ class VisionModule:
             print("⚠️ google-generativeai not installed. Run: pip install google-generativeai")
         except Exception as e:
             print(f"⚠️ Vision module init error: {e}")
+    
+    def _switch_api_key(self):
+        """Switch to next API key on rate limit"""
+        try:
+            new_key = config.get_next_api_key()
+            if new_key and self.genai:
+                self.genai.configure(api_key=new_key)
+                self.model = self.genai.GenerativeModel(self.current_model_name)
+                return True
+        except Exception as e:
+            print(f"⚠️ Failed to switch API key: {e}")
+        return False
+    
+    async def _call_with_retry(self, prompt: str, image_bytes: bytes, max_retries: int = 3):
+        """Call the model with automatic retry and key rotation"""
+        last_error = None
+        
+        for attempt in range(max_retries):
+            try:
+                image_part = {"mime_type": "image/png", "data": image_bytes}
+                response = self.model.generate_content([prompt, image_part])
+                return response
+            except Exception as e:
+                last_error = e
+                error_str = str(e).lower()
+                
+                # Check for rate limit or quota errors
+                if "quota" in error_str or "rate" in error_str or "limit" in error_str or "429" in error_str:
+                    print(f"⚠️ API rate limit hit, attempting key rotation...")
+                    if self._switch_api_key():
+                        continue
+                
+                # Check for model not found (fallback to stable model)
+                if "not found" in error_str or "404" in error_str:
+                    print(f"⚠️ Model {self.current_model_name} not available, falling back...")
+                    fallback_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+                    for fallback in fallback_models:
+                        if fallback != self.current_model_name:
+                            try:
+                                self.current_model_name = fallback
+                                self.model = self.genai.GenerativeModel(fallback)
+                                print(f"   Switched to {fallback}")
+                                break
+                            except:
+                                continue
+                    continue
+                
+                print(f"⚠️ Vision API error (attempt {attempt + 1}): {e}")
+        
+        raise last_error if last_error else Exception("Max retries exceeded")
     
     async def find_element(
         self,
@@ -130,20 +189,8 @@ If element is NOT found, set found=false and x,y to 0.
 ONLY return the JSON, no other text."""
 
         try:
-            import google.generativeai as genai
-            
-            # Decode base64 to bytes
             image_bytes = base64.b64decode(screenshot_base64)
-            
-            # Create image part
-            image_part = {
-                "mime_type": "image/png",
-                "data": image_bytes
-            }
-            
-            response = self.model.generate_content([prompt, image_part])
-            
-            # Parse JSON from response
+            response = await self._call_with_retry(prompt, image_bytes)
             result = self._parse_json_response(response.text)
             
             if result:
@@ -212,12 +259,8 @@ RESPOND IN THIS EXACT JSON FORMAT:
 ONLY return the JSON, no other text."""
 
         try:
-            import google.generativeai as genai
-            
             image_bytes = base64.b64decode(screenshot_base64)
-            image_part = {"mime_type": "image/png", "data": image_bytes}
-            
-            response = self.model.generate_content([prompt, image_part])
+            response = await self._call_with_retry(prompt, image_bytes)
             result = self._parse_json_response(response.text)
             
             if result:
@@ -275,12 +318,8 @@ RESPOND IN THIS EXACT JSON FORMAT:
 ONLY return the JSON, no other text."""
 
         try:
-            import google.generativeai as genai
-            
             image_bytes = base64.b64decode(screenshot_base64)
-            image_part = {"mime_type": "image/png", "data": image_bytes}
-            
-            response = self.model.generate_content([prompt, image_part])
+            response = await self._call_with_retry(prompt, image_bytes)
             result = self._parse_json_response(response.text)
             
             if result:
@@ -319,12 +358,8 @@ RESPOND with ONLY the extracted text, nothing else.
 If text is not found, respond with "NOT_FOUND"."""
 
         try:
-            import google.generativeai as genai
-            
             image_bytes = base64.b64decode(screenshot_base64)
-            image_part = {"mime_type": "image/png", "data": image_bytes}
-            
-            response = self.model.generate_content([prompt, image_part])
+            response = await self._call_with_retry(prompt, image_bytes)
             text = response.text.strip()
             
             if text and text != "NOT_FOUND":

@@ -3,43 +3,92 @@ Configuration settings for FinAgent
 """
 
 import os
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Optional, List
+from pathlib import Path
+
+# Load .env file
+from dotenv import load_dotenv
+
+# Find and load .env from project root
+project_root = Path(__file__).parent.parent.parent
+env_path = project_root / '.env'
+load_dotenv(env_path)
+
+
+def get_gemini_api_keys() -> List[str]:
+    """Get all configured Gemini API keys (primary + fallbacks)"""
+    keys = []
+    
+    # Primary key
+    primary = os.getenv("GEMINI_API_KEY")
+    if primary:
+        keys.append(primary)
+    
+    # Fallback keys
+    for i in range(1, 10):
+        fallback = os.getenv(f"GEMINI_API_KEY_FALLBACK_{i}")
+        if fallback:
+            keys.append(fallback)
+    
+    return keys
+
 
 @dataclass
 class Config:
     """Agent configuration settings"""
     
     # AI Model Settings
-    openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
-    gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
+    openai_api_key: Optional[str] = None
+    gemini_api_key: Optional[str] = None
+    gemini_api_keys: List[str] = field(default_factory=list)
+    current_key_index: int = 0
     
     # Which AI model to use: "openai" or "gemini"
-    ai_provider: str = os.getenv("AI_PROVIDER", "gemini")  # Default to free tier
-    openai_model: str = "gpt-4o-mini"  # Cheaper option
-    gemini_model: str = "gemini-1.5-flash"  # Free tier
+    ai_provider: str = "gemini"
+    openai_model: str = "gpt-4o-mini"
+    gemini_model: str = "gemini-2.0-flash-exp"
     
     # Vision Model Settings (for UI element detection)
     vision_enabled: bool = True
-    vision_model: str = os.getenv("VISION_MODEL", "gemini-1.5-flash")
+    vision_model: str = "gemini-2.0-flash-exp"
     
     # Browser Settings
-    browser_type: str = os.getenv("BROWSER_TYPE", "chromium")
-    headless: bool = os.getenv("HEADLESS", "false").lower() == "true"
-    slow_mo: int = int(os.getenv("SLOW_MO", "100"))
+    browser_type: str = "chromium"
+    headless: bool = False
+    slow_mo: int = 100
     
     # Target Banking Website
-    bank_url: str = os.getenv("BANK_URL", "http://localhost:8080")
+    bank_url: str = "http://localhost:8080"
     
     # Conscious Pause Settings
-    require_approval_for: list = None  # High-risk actions requiring approval
-    approval_timeout: int = int(os.getenv("APPROVAL_TIMEOUT", "60"))
+    require_approval_for: list = None
+    approval_timeout: int = 60
     
     # Logging
-    log_level: str = os.getenv("LOG_LEVEL", "INFO")
-    log_file: str = os.getenv("LOG_FILE", "logs/agent.log")
+    log_level: str = "INFO"
+    log_file: str = "logs/agent.log"
     
     def __post_init__(self):
+        # Load from environment
+        self.openai_api_key = os.getenv("OPENAI_API_KEY")
+        self.gemini_api_key = os.getenv("GEMINI_API_KEY")
+        self.gemini_api_keys = get_gemini_api_keys()
+        
+        self.ai_provider = os.getenv("AI_PROVIDER", "gemini")
+        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
+        self.vision_model = os.getenv("VISION_MODEL", "gemini-2.0-flash-exp")
+        
+        self.browser_type = os.getenv("BROWSER_TYPE", "chromium")
+        self.headless = os.getenv("HEADLESS", "false").lower() == "true"
+        self.slow_mo = int(os.getenv("SLOW_MO", "100"))
+        
+        self.bank_url = os.getenv("BANK_URL", "http://localhost:8080")
+        self.approval_timeout = int(os.getenv("APPROVAL_TIMEOUT", "60"))
+        
+        self.log_level = os.getenv("LOG_LEVEL", "INFO")
+        self.log_file = os.getenv("LOG_FILE", "logs/agent.log")
+        
         if self.require_approval_for is None:
             self.require_approval_for = [
                 "pay_bill",
@@ -47,6 +96,23 @@ class Config:
                 "buy_gold",
                 "update_profile"
             ]
+    
+    def get_next_api_key(self) -> Optional[str]:
+        """Get next API key when current one hits rate limit"""
+        if not self.gemini_api_keys:
+            return None
+        
+        self.current_key_index = (self.current_key_index + 1) % len(self.gemini_api_keys)
+        new_key = self.gemini_api_keys[self.current_key_index]
+        self.gemini_api_key = new_key
+        print(f"🔄 Switching to API key #{self.current_key_index + 1}")
+        return new_key
+    
+    def get_current_api_key(self) -> Optional[str]:
+        """Get the current active API key"""
+        if self.gemini_api_keys:
+            return self.gemini_api_keys[self.current_key_index]
+        return self.gemini_api_key
 
 
 # Default configuration instance
