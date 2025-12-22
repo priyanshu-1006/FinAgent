@@ -6,6 +6,10 @@ The central coordinator that brings together:
 - Browser automation (Digital Hand)
 - Conscious pause (Safety mechanism)
 - Task orchestration (Multi-step planning)
+- Audit logging (Compliance & debugging)
+- Session management (Persistence & recovery)
+- Performance metrics (Analytics & monitoring)
+- Transaction limits (Safety controls)
 """
 
 import asyncio
@@ -18,6 +22,13 @@ from .browser_automation import BrowserAutomation, ActionResult
 from .conscious_pause import ConciousPause, ApprovalRequest, ApprovalStatus
 from .orchestrator import TaskOrchestrator, Task, TaskStatus
 
+# Import improvement modules
+from .audit_logger import get_audit_logger, ActionType
+from .session_manager import get_session_manager
+from .metrics import get_metrics
+from .transaction_limits import get_transaction_limits, check_transaction_limit
+from .user_errors import translate_error, format_error
+
 
 class FinAgent:
     """
@@ -28,6 +39,10 @@ class FinAgent:
     - Automated browser interactions
     - Human-in-the-loop approval for risky actions
     - Multi-step task orchestration
+    - Comprehensive audit logging
+    - Session persistence & recovery
+    - Performance metrics tracking
+    - Transaction limit enforcement
     """
     
     def __init__(self, custom_config: Config = None):
@@ -38,6 +53,12 @@ class FinAgent:
         self.browser = BrowserAutomation()
         self.conscious_pause = ConciousPause()
         self.orchestrator = None
+        
+        # Improvement modules
+        self.audit_logger = get_audit_logger()
+        self.session_manager = get_session_manager()
+        self.metrics = get_metrics()
+        self.transaction_limits = get_transaction_limits()
         
         # State
         self.is_running = False
@@ -55,8 +76,21 @@ class FinAgent:
         
         print("🚀 Starting FinAgent...")
         
+        # Log session start
+        self.audit_logger.log(
+            action_type=ActionType.SESSION_START,
+            details={"bank_url": self.config.bank_url},
+            risk_level="low"
+        )
+        
         # Start browser
         await self.browser.start()
+        
+        # Try to restore session (cookies, login state)
+        if self.session_manager.is_logged_in():
+            print("📂 Found previous session, attempting to restore...")
+            if self.browser.context:
+                await self.session_manager.restore_cookies_to_browser(self.browser.context)
         
         # Initialize orchestrator
         self.orchestrator = TaskOrchestrator(
@@ -76,6 +110,9 @@ class FinAgent:
         # Navigate to bank
         await self.browser.navigate()
         
+        # Start auto-save for session
+        await self.session_manager.start_auto_save()
+        
         self.is_running = True
         self.session_start = datetime.now()
         
@@ -88,6 +125,30 @@ class FinAgent:
         """Stop the agent and cleanup"""
         
         print("\n🛑 Stopping FinAgent...")
+        
+        # Save session state before stopping
+        if self.browser.context:
+            await self.session_manager.save_cookies_from_browser(self.browser.context)
+        
+        # Stop auto-save
+        await self.session_manager.stop_auto_save()
+        
+        # Log session end
+        self.audit_logger.log(
+            action_type=ActionType.SESSION_END,
+            details={
+                "commands_executed": len(self.command_history),
+                "session_duration": str(datetime.now() - self.session_start) if self.session_start else "0"
+            },
+            risk_level="low"
+        )
+        
+        # Export session log
+        try:
+            log_path = self.audit_logger.export_session_log()
+            print(f"📝 Session log saved: {log_path}")
+        except Exception as e:
+            print(f"⚠️ Failed to export session log: {e}")
         
         await self.browser.stop()
         self.is_running = False
@@ -110,26 +171,101 @@ class FinAgent:
         
         print(f"\n📝 Command: {command}")
         
+        # Start tracking metrics
+        self.metrics.start_command(command, action="parsing")
+        
+        # Log command received
+        self.audit_logger.log_command(command)
+        
+        # Parse intent first to check transaction limits
+        intent = self.intent_parser.parse(command)
+        
+        # Check transaction limits if applicable
+        amount = intent.parameters.get("amount", 0)
+        if amount > 0 and intent.action in ["pay_bill", "fund_transfer", "buy_gold"]:
+            limit_check = check_transaction_limit(intent.action, amount)
+            
+            if not limit_check.allowed:
+                error_msg = self.transaction_limits.format_limit_message(limit_check)
+                print(f"⚠️ {error_msg}")
+                
+                self.audit_logger.log_error(
+                    error_type="transaction_limit",
+                    message=limit_check.reason,
+                    recoverable=True
+                )
+                
+                self.metrics.complete_command(success=False, error="Transaction limit exceeded")
+                
+                return {
+                    "status": "rejected",
+                    "error": error_msg,
+                    "limit_info": {
+                        "type": limit_check.limit_type.value if limit_check.limit_type else None,
+                        "limit": limit_check.limit_value,
+                        "remaining": limit_check.remaining
+                    }
+                }
+            
+            # Warn about 2FA if required
+            if limit_check.requires_2fa:
+                print("⚠️ High-value transaction: Additional verification may be required")
+        
         # Store in history
         self.command_history.append({
             "command": command,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "intent": intent.to_dict()
         })
         
-        # Process through orchestrator
-        task = await self.orchestrator.process_command(command)
+        # Save to session manager
+        self.session_manager.add_command(command, intent.to_dict())
         
-        return {
-            "task_id": task.id,
-            "status": task.status.value,
-            "command": command,
-            "steps_completed": sum(1 for s in task.steps if s.status == TaskStatus.COMPLETED),
-            "total_steps": len(task.steps),
-            "result": task.to_dict()
-        }
+        try:
+            # Process through orchestrator
+            task = await self.orchestrator.process_command(command)
+            
+            # Record successful transaction if applicable
+            if task.status == TaskStatus.COMPLETED and amount > 0:
+                self.transaction_limits.record_transaction(intent.action, amount, success=True)
+            
+            # Complete metrics tracking
+            self.metrics.complete_command(
+                success=task.status == TaskStatus.COMPLETED,
+                error=None if task.status == TaskStatus.COMPLETED else "Task failed"
+            )
+            
+            return {
+                "task_id": task.id,
+                "status": task.status.value,
+                "command": command,
+                "steps_completed": sum(1 for s in task.steps if s.status == TaskStatus.COMPLETED),
+                "total_steps": len(task.steps),
+                "result": task.to_dict()
+            }
+            
+        except Exception as e:
+            # Translate error for user
+            user_error = translate_error(str(e))
+            error_message = format_error(str(e))
+            
+            self.audit_logger.log_error(
+                error_type="execution",
+                message=str(e),
+                recoverable=user_error.recoverable
+            )
+            
+            self.metrics.complete_command(success=False, error=str(e))
+            
+            return {
+                "status": "error",
+                "error": user_error.message,
+                "suggestion": user_error.suggestion,
+                "technical_details": str(e)
+            }
     
     async def get_status(self) -> Dict[str, Any]:
-        """Get current agent status"""
+        """Get current agent status with comprehensive metrics"""
         
         page_state = await self.browser.get_page_state() if self.is_running else {}
         
@@ -140,16 +276,63 @@ class FinAgent:
             "is_logged_in": self.browser.is_logged_in if self.is_running else False,
             "current_url": page_state.get("url", ""),
             "pending_approvals": self.conscious_pause.get_pending_requests(),
-            "recent_history": self.command_history[-5:]
+            "recent_history": self.command_history[-5:],
+            
+            # New metrics
+            "performance": self.metrics.get_summary(),
+            "session_info": self.session_manager.get_session_summary(),
+            "transaction_limits": {
+                "pay_bill": self.transaction_limits.get_remaining_limits("pay_bill"),
+                "fund_transfer": self.transaction_limits.get_remaining_limits("fund_transfer"),
+                "buy_gold": self.transaction_limits.get_remaining_limits("buy_gold"),
+            }
         }
     
     async def approve(self, request_id: str) -> bool:
         """Approve a pending action"""
-        return self.conscious_pause.approve(request_id)
+        result = self.conscious_pause.approve(request_id)
+        
+        # Log approval decision
+        self.audit_logger.log_approval_decision(
+            approved=True,
+            action=request_id,
+            reason="User approved"
+        )
+        
+        # Track in metrics
+        self.metrics.set_approval_granted(True)
+        
+        # Save to session
+        self.session_manager.add_approval(
+            action=request_id,
+            details={},
+            approved=True
+        )
+        
+        return result
     
     async def reject(self, request_id: str) -> bool:
         """Reject a pending action"""
-        return self.conscious_pause.reject(request_id)
+        result = self.conscious_pause.reject(request_id)
+        
+        # Log rejection
+        self.audit_logger.log_approval_decision(
+            approved=False,
+            action=request_id,
+            reason="User rejected"
+        )
+        
+        # Track in metrics
+        self.metrics.set_approval_granted(False)
+        
+        # Save to session
+        self.session_manager.add_approval(
+            action=request_id,
+            details={},
+            approved=False
+        )
+        
+        return result
     
     async def get_screenshot(self) -> str:
         """Get current browser screenshot (base64)"""

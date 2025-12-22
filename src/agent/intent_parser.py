@@ -38,7 +38,7 @@ class IntentParser:
     def __init__(self, use_ai: bool = True):
         self.use_ai = use_ai
         self.ai_client = None
-        self.genai = None
+        self._gemini_model_name = None
         
         if use_ai:
             self._init_ai_client()
@@ -50,22 +50,20 @@ class IntentParser:
                 from openai import OpenAI
                 self.ai_client = OpenAI(api_key=config.openai_api_key)
             elif config.ai_provider == "gemini" and config.get_current_api_key():
-                import google.generativeai as genai
-                self.genai = genai
-                genai.configure(api_key=config.get_current_api_key())
-                self.ai_client = genai.GenerativeModel(config.gemini_model)
+                from google import genai
+                self.ai_client = genai.Client(api_key=config.get_current_api_key())
+                self._gemini_model_name = config.gemini_model
         except ImportError as e:
             print(f"AI library not available: {e}")
             self.ai_client = None
     
     def _switch_api_key(self):
         """Switch to next API key on rate limit"""
-        if self.genai:
-            new_key = config.get_next_api_key()
-            if new_key:
-                self.genai.configure(api_key=new_key)
-                self.ai_client = self.genai.GenerativeModel(config.gemini_model)
-                return True
+        new_key = config.get_next_api_key()
+        if new_key and config.ai_provider == "gemini":
+            from google import genai
+            self.ai_client = genai.Client(api_key=new_key)
+            return True
         return False
     
     def parse(self, command: str) -> ParsedIntent:
@@ -100,7 +98,11 @@ class IntentParser:
                     result = json.loads(response.choices[0].message.content)
                 
                 elif config.ai_provider == "gemini":
-                    response = self.ai_client.generate_content(prompt)
+                    # Use new google.genai API
+                    response = self.ai_client.models.generate_content(
+                        model=self._gemini_model_name,
+                        contents=prompt
+                    )
                     # Extract JSON from response
                     text = response.text
                     json_match = re.search(r'\{.*\}', text, re.DOTALL)
@@ -132,14 +134,20 @@ class IntentParser:
         return None
     
     def _parse_with_keywords(self, command: str) -> ParsedIntent:
-        """Simple keyword-based intent parsing"""
+        """Simple keyword-based intent parsing with weighted scoring"""
         
         command_lower = command.lower()
         best_match = None
         best_score = 0
         
         for action, keywords in INTENT_KEYWORDS.items():
-            score = sum(1 for kw in keywords if kw in command_lower)
+            # Weight longer keywords more heavily to prefer specific matches
+            # "edit profile" should score higher than just "profile"
+            score = sum(
+                len(kw.split())  # Weight by number of words in keyword
+                for kw in keywords 
+                if kw in command_lower
+            )
             if score > best_score:
                 best_score = score
                 best_match = action

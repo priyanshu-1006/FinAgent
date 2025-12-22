@@ -7,15 +7,22 @@ This module implements the core innovation of FinAgent:
 - Returns coordinates for clicking/interacting
 - Provides human-like understanding of web interfaces
 - Supports API key fallback for rate limit handling
+- Implements element caching to reduce API calls
+- Uses exponential backoff for rate limit recovery
 """
 
 import json
 import re
 import base64
+import asyncio
+import random
+import time
 from typing import Dict, Any, Optional, Tuple, List
 from dataclasses import dataclass
 
 from .config import config
+from .element_cache import get_element_cache
+from .metrics import get_metrics
 
 
 @dataclass
@@ -59,25 +66,26 @@ class VisionModule:
     - Page state analysis
     - Visual verification of actions
     - Supports automatic API key rotation on rate limits
+    - Implements element caching to reduce API calls
+    - Uses exponential backoff with jitter for retries
     """
     
     def __init__(self):
-        self.model = None
-        self.genai = None
+        self.client = None
         self.current_model_name = None
+        self.cache = get_element_cache()
+        self.metrics = get_metrics()
         self._init_model()
     
     def _init_model(self):
-        """Initialize Gemini model for vision"""
+        """Initialize Gemini model for vision using new google.genai API"""
         try:
-            import google.generativeai as genai
-            self.genai = genai
+            from google import genai
             
             api_key = config.get_current_api_key()
             if api_key:
-                genai.configure(api_key=api_key)
+                self.client = genai.Client(api_key=api_key)
                 self.current_model_name = config.vision_model
-                self.model = genai.GenerativeModel(self.current_model_name)
                 print(f"✅ Vision Module initialized with {self.current_model_name}")
                 if len(config.gemini_api_keys) > 1:
                     print(f"   📦 {len(config.gemini_api_keys)} API keys available for fallback")
@@ -85,30 +93,59 @@ class VisionModule:
                 print("⚠️ No Gemini API key found. Vision features disabled.")
                 print("   Get free key at: https://aistudio.google.com/app/apikey")
         except ImportError:
-            print("⚠️ google-generativeai not installed. Run: pip install google-generativeai")
+            print("⚠️ google-genai not installed. Run: pip install google-genai")
         except Exception as e:
             print(f"⚠️ Vision module init error: {e}")
     
     def _switch_api_key(self):
         """Switch to next API key on rate limit"""
         try:
+            from google import genai
             new_key = config.get_next_api_key()
-            if new_key and self.genai:
-                self.genai.configure(api_key=new_key)
-                self.model = self.genai.GenerativeModel(self.current_model_name)
+            if new_key:
+                self.client = genai.Client(api_key=new_key)
                 return True
         except Exception as e:
             print(f"⚠️ Failed to switch API key: {e}")
         return False
     
     async def _call_with_retry(self, prompt: str, image_bytes: bytes, max_retries: int = 3):
-        """Call the model with automatic retry and key rotation"""
+        """
+        Call the model with automatic retry, exponential backoff, and key rotation
+        
+        Uses exponential backoff with jitter to avoid thundering herd problem
+        """
+        from google.genai import types
+        
         last_error = None
+        base_delay = 2  # Start with 2 seconds
+        
+        start_time = time.time()
         
         for attempt in range(max_retries):
             try:
-                image_part = {"mime_type": "image/png", "data": image_bytes}
-                response = self.model.generate_content([prompt, image_part])
+                # Use the new google.genai API structure
+                response = self.client.models.generate_content(
+                    model=self.current_model_name,
+                    contents=[
+                        types.Content(
+                            parts=[
+                                types.Part.from_text(text=prompt),
+                                types.Part.from_bytes(data=image_bytes, mime_type="image/png")
+                            ]
+                        )
+                    ]
+                )
+                
+                # Record successful API call
+                duration_ms = (time.time() - start_time) * 1000
+                self.metrics.record_api_call(
+                    provider="gemini",
+                    model=self.current_model_name,
+                    duration_ms=duration_ms,
+                    success=True
+                )
+                
                 return response
             except Exception as e:
                 last_error = e
@@ -116,7 +153,11 @@ class VisionModule:
                 
                 # Check for rate limit or quota errors
                 if "quota" in error_str or "rate" in error_str or "limit" in error_str or "429" in error_str:
-                    print(f"⚠️ API rate limit hit, attempting key rotation...")
+                    # Calculate delay with exponential backoff and jitter
+                    delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+                    print(f"⚠️ API rate limit hit, waiting {delay:.1f}s before retry...")
+                    await asyncio.sleep(delay)
+                    
                     if self._switch_api_key():
                         continue
                 
@@ -128,7 +169,6 @@ class VisionModule:
                         if fallback != self.current_model_name:
                             try:
                                 self.current_model_name = fallback
-                                self.model = self.genai.GenerativeModel(fallback)
                                 print(f"   Switched to {fallback}")
                                 break
                             except:
@@ -137,32 +177,63 @@ class VisionModule:
                 
                 print(f"⚠️ Vision API error (attempt {attempt + 1}): {e}")
         
+        # Record failed API call
+        duration_ms = (time.time() - start_time) * 1000
+        self.metrics.record_api_call(
+            provider="gemini",
+            model=self.current_model_name,
+            duration_ms=duration_ms,
+            success=False,
+            error=str(last_error)
+        )
+        
         raise last_error if last_error else Exception("Max retries exceeded")
     
     async def find_element(
         self,
         screenshot_base64: str,
         element_description: str,
-        element_type: str = "button"
+        element_type: str = "button",
+        page_url: str = ""
     ) -> ElementLocation:
         """
         Find a UI element in a screenshot
+        
+        Uses caching to avoid repeated API calls for same elements.
         
         Args:
             screenshot_base64: Base64 encoded screenshot
             element_description: What to find (e.g., "Login button", "Amount input field")
             element_type: Type of element (button, input, link, text)
+            page_url: Current page URL for cache scoping
         
         Returns:
             ElementLocation with coordinates and confidence
         """
-        if not self.model:
+        if not self.client:
             return ElementLocation(
                 found=False,
                 element_type=element_type,
                 description=element_description,
                 confidence=0.0
             )
+        
+        # Check cache first
+        if page_url:
+            cached = self.cache.get(page_url, element_description, element_type)
+            if cached:
+                print(f"📦 Cache hit for '{element_description}'")
+                return ElementLocation(
+                    found=True,
+                    element_type=cached.element_type,
+                    description=cached.description,
+                    x=cached.x,
+                    y=cached.y,
+                    confidence=cached.confidence,
+                    selector_hint=cached.selector_hint
+                )
+        
+        start_time = time.time()
         
         prompt = f"""Analyze this banking website screenshot and find the UI element described below.
 
@@ -194,14 +265,41 @@ ONLY return the JSON, no other text."""
             result = self._parse_json_response(response.text)
             
             if result:
+                element_found = result.get("found", False)
+                x = result.get("x", 0)
+                y = result.get("y", 0)
+                confidence = result.get("confidence", 0.0)
+                selector_hint = result.get("selector_hint")
+                
+                # Cache the result if found
+                if element_found and page_url and x > 0 and y > 0:
+                    self.cache.set(
+                        page_url=page_url,
+                        element_desc=element_description,
+                        element_type=element_type,
+                        x=x,
+                        y=y,
+                        confidence=confidence,
+                        selector_hint=selector_hint
+                    )
+                
+                # Record vision call metrics
+                duration_ms = (time.time() - start_time) * 1000
+                self.metrics.record_vision_call(
+                    operation="find_element",
+                    duration_ms=duration_ms,
+                    element_found=element_found,
+                    confidence=confidence
+                )
+                
                 return ElementLocation(
-                    found=result.get("found", False),
+                    found=element_found,
                     element_type=result.get("element_type", element_type),
                     description=result.get("description", element_description),
-                    x=result.get("x", 0),
-                    y=result.get("y", 0),
-                    confidence=result.get("confidence", 0.0),
-                    selector_hint=result.get("selector_hint")
+                    x=x,
+                    y=y,
+                    confidence=confidence,
+                    selector_hint=selector_hint
                 )
         
         except Exception as e:
@@ -223,7 +321,7 @@ ONLY return the JSON, no other text."""
         - Finding all interactive elements
         - Verifying successful navigation
         """
-        if not self.model:
+        if not self.client:
             return PageAnalysis(
                 page_type="unknown",
                 elements=[],
@@ -296,7 +394,7 @@ ONLY return the JSON, no other text."""
         Returns:
             (success: bool, description: str)
         """
-        if not self.model:
+        if not self.client:
             return True, "Vision verification skipped"
         
         prompt = f"""Analyze this screenshot and verify if the expected outcome occurred.
@@ -344,7 +442,7 @@ ONLY return the JSON, no other text."""
         - Error messages
         - Success confirmations
         """
-        if not self.model:
+        if not self.client:
             return None
         
         prompt = f"""Look at this banking screenshot and extract the text from: {region_description}

@@ -3,6 +3,7 @@ Configuration settings for FinAgent
 """
 
 import os
+import random
 from dataclasses import dataclass, field
 from typing import Optional, List
 from pathlib import Path
@@ -32,6 +33,27 @@ def get_gemini_api_keys() -> List[str]:
             keys.append(fallback)
     
     return keys
+
+
+def calculate_backoff_delay(attempt: int, base_delay: float = 2.0, max_delay: float = 60.0) -> float:
+    """
+    Calculate exponential backoff delay with jitter
+    
+    Args:
+        attempt: Current attempt number (0-indexed)
+        base_delay: Base delay in seconds
+        max_delay: Maximum delay cap in seconds
+    
+    Returns:
+        Delay in seconds with jitter
+    """
+    # Exponential backoff: 2^attempt * base_delay
+    delay = min(base_delay * (2 ** attempt), max_delay)
+    
+    # Add jitter (±25% randomization)
+    jitter = delay * random.uniform(-0.25, 0.25)
+    
+    return delay + jitter
 
 
 @dataclass
