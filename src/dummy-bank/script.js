@@ -14,6 +14,51 @@ let appState = {
   currentAction: null,
 };
 
+// ===== Particle System =====
+function createParticles() {
+  const particlesContainer = document.getElementById("particles");
+  if (!particlesContainer) return;
+
+  const colors = [
+    "rgba(0, 102, 255, 0.5)",
+    "rgba(0, 212, 255, 0.4)",
+    "rgba(255, 107, 53, 0.3)",
+  ];
+
+  for (let i = 0; i < 30; i++) {
+    const particle = document.createElement("div");
+    particle.className = "particle";
+    particle.style.left = Math.random() * 100 + "%";
+    particle.style.animationDelay = Math.random() * 15 + "s";
+    particle.style.animationDuration = 15 + Math.random() * 20 + "s";
+    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+    particle.style.width = 2 + Math.random() * 4 + "px";
+    particle.style.height = particle.style.width;
+    particlesContainer.appendChild(particle);
+  }
+}
+
+// ===== Ripple Effect =====
+function createRipple(event) {
+  const button = event.currentTarget;
+  const existingRipple = button.querySelector(".btn-ripple");
+  if (existingRipple) existingRipple.remove();
+
+  const ripple = document.createElement("span");
+  ripple.className = "btn-ripple";
+  
+  const rect = button.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  
+  ripple.style.width = ripple.style.height = size + "px";
+  ripple.style.left = event.clientX - rect.left - size / 2 + "px";
+  ripple.style.top = event.clientY - rect.top - size / 2 + "px";
+  
+  button.appendChild(ripple);
+  
+  setTimeout(() => ripple.remove(), 600);
+}
+
 // ===== Utility Functions =====
 function showPage(pageId) {
   // Make sure pages object is populated
@@ -28,19 +73,26 @@ function showPage(pageId) {
     };
   }
 
-  // Hide all pages first
+  // Hide all pages first with exit animation
   Object.values(pages).forEach((page) => {
-    if (page) {
-      page.classList.remove("active");
-      page.style.display = "none";
+    if (page && page.classList.contains("active")) {
+      page.classList.add("exiting");
+      setTimeout(() => {
+        page.classList.remove("active", "exiting");
+        page.style.display = "none";
+      }, 300);
     }
   });
 
-  // Show the requested page
-  if (pages[pageId]) {
-    pages[pageId].classList.add("active");
-    pages[pageId].style.display = "block";
-  }
+  // Show the requested page with entrance animation
+  setTimeout(() => {
+    if (pages[pageId]) {
+      pages[pageId].style.display = "block";
+      // Trigger reflow
+      pages[pageId].offsetHeight;
+      pages[pageId].classList.add("active");
+    }
+  }, 300);
 
   console.log("📄 Switched to page:", pageId);
 }
@@ -103,9 +155,16 @@ function updateBalance(amount, isDebit = true) {
   } else {
     appState.balance += amount;
   }
-  document.getElementById("account-balance").textContent = formatCurrency(
-    appState.balance
-  );
+  
+  // Animate the balance change
+  const balanceEl = document.getElementById("account-balance");
+  balanceEl.style.transform = "scale(1.1)";
+  balanceEl.style.transition = "transform 0.3s ease";
+  
+  setTimeout(() => {
+    balanceEl.textContent = formatCurrency(appState.balance);
+    balanceEl.style.transform = "scale(1)";
+  }, 150);
 }
 
 function addTransaction(title, amount, isDebit = true) {
@@ -128,8 +187,8 @@ function renderTransactions() {
   const html = appState.transactions
     .slice(0, 5)
     .map(
-      (txn) => `
-        <div class="transaction-item">
+      (txn, index) => `
+        <div class="transaction-item" style="animation: slideUp 0.4s ease ${index * 0.1}s both;">
             <div class="txn-icon ${txn.isDebit ? "debit" : "credit"}">${
         txn.isDebit ? "↑" : "↓"
       }</div>
@@ -578,6 +637,9 @@ document.getElementById("error-ok-btn").addEventListener("click", () => {
 
 // ===== Initialize =====
 function init() {
+  // Create particles
+  createParticles();
+
   // Initialize DOM elements
   pages = {
     login: document.getElementById("login-page"),
@@ -637,7 +699,29 @@ function init() {
   document.getElementById("gold-rate").textContent =
     formatCurrency(appState.goldRate) + " / gram";
 
-  console.log("🏦 JioFinance Dummy Bank initialized");
+  // Add ripple effect to all buttons
+  document.querySelectorAll(".btn").forEach((btn) => {
+    btn.addEventListener("click", createRipple);
+  });
+
+  // Add navbar scroll effect
+  window.addEventListener("scroll", () => {
+    const navbars = document.querySelectorAll(".navbar");
+    navbars.forEach((navbar) => {
+      if (window.scrollY > 20) {
+        navbar.classList.add("scrolled");
+      } else {
+        navbar.classList.remove("scrolled");
+      }
+    });
+  });
+
+  // Add stagger animation to action cards
+  document.querySelectorAll(".action-card").forEach((card, index) => {
+    card.style.animationDelay = `${0.1 + index * 0.05}s`;
+  });
+
+  console.log("🏦 JioFinance Bank initialized with enhanced UI ✨");
   console.log("📋 Available pages:", Object.keys(pages));
 }
 
