@@ -15,25 +15,29 @@ class Config:
     gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
     
     # Which AI model to use: "openai" or "gemini"
-    ai_provider: str = "openai"
-    openai_model: str = "gpt-4o"
-    gemini_model: str = "gemini-1.5-pro"
+    ai_provider: str = os.getenv("AI_PROVIDER", "gemini")  # Default to free tier
+    openai_model: str = "gpt-4o-mini"  # Cheaper option
+    gemini_model: str = "gemini-1.5-flash"  # Free tier
+    
+    # Vision Model Settings (for UI element detection)
+    vision_enabled: bool = True
+    vision_model: str = os.getenv("VISION_MODEL", "gemini-1.5-flash")
     
     # Browser Settings
-    browser_type: str = "chromium"  # chromium, firefox, webkit
-    headless: bool = False  # Set to True for production
-    slow_mo: int = 100  # Milliseconds between actions (for visibility)
+    browser_type: str = os.getenv("BROWSER_TYPE", "chromium")
+    headless: bool = os.getenv("HEADLESS", "false").lower() == "true"
+    slow_mo: int = int(os.getenv("SLOW_MO", "100"))
     
     # Target Banking Website
-    bank_url: str = "http://localhost:8080"
+    bank_url: str = os.getenv("BANK_URL", "http://localhost:8080")
     
     # Conscious Pause Settings
     require_approval_for: list = None  # High-risk actions requiring approval
-    approval_timeout: int = 60  # Seconds to wait for approval
+    approval_timeout: int = int(os.getenv("APPROVAL_TIMEOUT", "60"))
     
     # Logging
-    log_level: str = "INFO"
-    log_file: str = "logs/agent.log"
+    log_level: str = os.getenv("LOG_LEVEL", "INFO")
+    log_file: str = os.getenv("LOG_FILE", "logs/agent.log")
     
     def __post_init__(self):
         if self.require_approval_for is None:

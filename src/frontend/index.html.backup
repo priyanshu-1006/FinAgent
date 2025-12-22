@@ -171,36 +171,6 @@
             box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
         }
 
-        .voice-btn {
-            width: 50px;
-            height: 50px;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            background: var(--bg);
-            font-size: 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .voice-btn:hover {
-            border-color: var(--primary);
-            background: rgba(0, 102, 255, 0.1);
-        }
-
-        .voice-btn.listening {
-            background: var(--danger);
-            border-color: var(--danger);
-            animation: pulse-voice 1s infinite;
-        }
-
-        @keyframes pulse-voice {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 61, 0, 0.4); }
-            50% { box-shadow: 0 0 0 12px rgba(255, 61, 0, 0); }
-        }
-
         .send-btn {
             padding: 14px 24px;
             background: var(--primary);
@@ -528,17 +498,9 @@
             <div class="logo">
                 <span class="logo-icon">🤖</span>
                 <span class="logo-text">FinAgent</span>
-                <span style="background: linear-gradient(135deg, #E6F0FF, #CCE0FF); padding: 4px 12px; border-radius: 12px; font-size: 12px; color: var(--primary); font-weight: 500; margin-left: 8px;">
-                    👁️ Vision AI Enabled
-                </span>
+                <span style="color: var(--text-secondary); font-size: 14px;">AI Financial Assistant</span>
             </div>
-            <div class="header-right" style="display: flex; align-items: center; gap: 16px;">
-                <button id="start-btn" style="padding: 10px 20px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                    ▶️ Start Agent
-                </button>
-                <button id="stop-btn" style="padding: 10px 20px; background: var(--danger); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: none; align-items: center; gap: 6px;">
-                    ⏹️ Stop
-                </button>
+            <div class="header-right">
                 <div id="status-badge" class="status-badge stopped">
                     <span class="status-dot"></span>
                     <span id="status-text">Disconnected</span>
@@ -557,10 +519,9 @@
                     type="text" 
                     id="command-input" 
                     class="command-input" 
-                    placeholder="Type a command or press 🎤 to speak..."
+                    placeholder="Type a command... e.g., 'Pay electricity bill of ₹1500'"
                     autocomplete="off"
                 >
-                <button id="voice-btn" class="voice-btn" title="Voice Input (Ctrl+M)">🎤</button>
                 <button id="send-btn" class="send-btn">Execute</button>
             </div>
 
@@ -632,19 +593,13 @@
         // ===== State =====
         let ws = null;
         let isConnected = false;
-        let isAgentRunning = false;
         let activities = [];
         let currentTask = null;
         let pendingApprovals = [];
-        let recognition = null;
-        let isListening = false;
 
         // ===== DOM Elements =====
         const commandInput = document.getElementById('command-input');
         const sendBtn = document.getElementById('send-btn');
-        const voiceBtn = document.getElementById('voice-btn');
-        const startBtn = document.getElementById('start-btn');
-        const stopBtn = document.getElementById('stop-btn');
         const statusBadge = document.getElementById('status-badge');
         const statusText = document.getElementById('status-text');
         const activityFeed = document.getElementById('activity-feed');
@@ -652,114 +607,6 @@
         const browserUrl = document.getElementById('browser-url');
         const approvalsContainer = document.getElementById('approvals-container');
         const taskContainer = document.getElementById('task-container');
-
-        // ===== Voice Recognition (FREE - Browser API) =====
-        function initVoiceRecognition() {
-            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                recognition = new SpeechRecognition();
-                recognition.continuous = false;
-                recognition.interimResults = true;
-                recognition.lang = 'en-IN'; // Indian English
-                
-                recognition.onstart = () => {
-                    isListening = true;
-                    voiceBtn.classList.add('listening');
-                    voiceBtn.innerHTML = '🔴';
-                    commandInput.placeholder = '🎤 Listening... speak now';
-                    addActivity('🎤', 'Listening for voice command...', 'command');
-                };
-                
-                recognition.onresult = (event) => {
-                    const transcript = Array.from(event.results)
-                        .map(result => result[0].transcript)
-                        .join('');
-                    
-                    commandInput.value = transcript;
-                    
-                    // Auto-execute on final result
-                    if (event.results[0].isFinal) {
-                        stopVoice();
-                        if (transcript.trim()) {
-                            executeCommand(transcript);
-                        }
-                    }
-                };
-                
-                recognition.onend = () => {
-                    stopVoice();
-                };
-                
-                recognition.onerror = (event) => {
-                    console.error('Speech recognition error:', event.error);
-                    addActivity('❌', `Voice error: ${event.error}`, 'error');
-                    stopVoice();
-                };
-                
-                console.log('✅ Voice recognition initialized');
-            } else {
-                voiceBtn.style.display = 'none';
-                console.log('⚠️ Voice recognition not supported');
-            }
-        }
-
-        function toggleVoice() {
-            if (isListening) {
-                stopVoice();
-            } else {
-                startVoice();
-            }
-        }
-
-        function startVoice() {
-            if (recognition) {
-                try {
-                    recognition.start();
-                } catch (e) {
-                    console.error('Voice start error:', e);
-                }
-            }
-        }
-
-        function stopVoice() {
-            if (recognition && isListening) {
-                recognition.stop();
-            }
-            isListening = false;
-            voiceBtn.classList.remove('listening');
-            voiceBtn.innerHTML = '🎤';
-            commandInput.placeholder = "Type a command or press 🎤 to speak...";
-        }
-
-        // ===== Agent Control =====
-        async function startAgent() {
-            try {
-                addActivity('🚀', 'Starting FinAgent...', 'command');
-                const response = await fetch('/api/start', { method: 'POST' });
-                const data = await response.json();
-                
-                if (data.status === 'started' || data.status === 'already_running') {
-                    isAgentRunning = true;
-                    startBtn.style.display = 'none';
-                    stopBtn.style.display = 'flex';
-                    addActivity('✅', 'Agent started successfully', 'success');
-                }
-            } catch (error) {
-                addActivity('❌', `Failed to start agent: ${error.message}`, 'error');
-            }
-        }
-
-        async function stopAgent() {
-            try {
-                const response = await fetch('/api/stop', { method: 'POST' });
-                isAgentRunning = false;
-                startBtn.style.display = 'flex';
-                stopBtn.style.display = 'none';
-                addActivity('🛑', 'Agent stopped', 'command');
-            } catch (error) {
-                addActivity('❌', `Failed to stop agent: ${error.message}`, 'error');
-            }
-        }
 
         // ===== WebSocket Connection =====
         function connect() {
@@ -771,13 +618,13 @@
             ws.onopen = () => {
                 isConnected = true;
                 updateStatus(true);
-                addActivity('🟢', 'Connected to FinAgent server', 'success');
+                addActivity('🟢', 'Connected to FinAgent', 'success');
             };
             
             ws.onclose = () => {
                 isConnected = false;
                 updateStatus(false);
-                addActivity('🔴', 'Disconnected from server', 'error');
+                addActivity('🔴', 'Disconnected from FinAgent', 'error');
                 
                 // Reconnect after 3 seconds
                 setTimeout(connect, 3000);
@@ -987,23 +834,6 @@
             if (e.key === 'Enter') executeCommand(commandInput.value);
         });
 
-        voiceBtn.addEventListener('click', toggleVoice);
-        startBtn.addEventListener('click', startAgent);
-        stopBtn.addEventListener('click', stopAgent);
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            // Ctrl+M for voice
-            if (e.ctrlKey && e.key === 'm') {
-                e.preventDefault();
-                toggleVoice();
-            }
-            // Escape to stop voice
-            if (e.key === 'Escape' && isListening) {
-                stopVoice();
-            }
-        });
-
         document.querySelectorAll('.quick-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const cmd = btn.dataset.cmd;
@@ -1013,7 +843,6 @@
         });
 
         // ===== Initialize =====
-        initVoiceRecognition();
         connect();
     </script>
 </body>

@@ -5,6 +5,7 @@ This module provides the "Digital Hand" functionality:
 - Browser initialization and management
 - Page navigation and element interaction
 - Screenshot capture for AI vision
+- Vision-based element detection (CORE INNOVATION)
 - Action execution on the banking website
 """
 
@@ -25,18 +26,20 @@ class ActionResult:
     message: str
     screenshot: Optional[str] = None  # Base64 encoded
     data: Optional[Dict[str, Any]] = None
+    vision_used: bool = False  # Track if vision was used
     
     def to_dict(self) -> Dict[str, Any]:
         return {
             "success": self.success,
             "action": self.action,
             "message": self.message,
-            "data": self.data
+            "data": self.data,
+            "vision_used": self.vision_used
         }
 
 
 class BrowserAutomation:
-    """Browser automation using Playwright"""
+    """Browser automation using Playwright with Vision AI support"""
     
     def __init__(self):
         self.playwright = None
@@ -44,6 +47,17 @@ class BrowserAutomation:
         self.context: Optional[BrowserContext] = None
         self.page: Optional[Page] = None
         self.is_logged_in = False
+        self.vision = None  # Vision module for AI-based element detection
+        self._init_vision()
+    
+    def _init_vision(self):
+        """Initialize vision module for AI-based element detection"""
+        if config.vision_enabled:
+            try:
+                from .vision import VisionModule
+                self.vision = VisionModule()
+            except Exception as e:
+                print(f"⚠️ Vision module not available: {e}")
     
     async def start(self):
         """Initialize browser"""
@@ -68,6 +82,8 @@ class BrowserAutomation:
         
         self.page = await self.context.new_page()
         print(f"🌐 Browser started ({config.browser_type})")
+        if self.vision and self.vision.model:
+            print("👁️ Vision AI enabled for element detection")
     
     async def stop(self):
         """Close browser"""
@@ -98,6 +114,189 @@ class BrowserAutomation:
         """Take screenshot and return base64 encoded"""
         screenshot_bytes = await self.page.screenshot()
         return base64.b64encode(screenshot_bytes).decode('utf-8')
+    
+    # ===== VISION-BASED ACTIONS (Core Innovation) =====
+    
+    async def click_with_vision(self, element_description: str, element_type: str = "button") -> ActionResult:
+        """
+        Click an element using AI Vision to find it
+        
+        This is the CORE INNOVATION - the agent "sees" the UI like a human
+        and clicks based on visual understanding, not brittle selectors.
+        """
+        if not self.vision or not self.vision.model:
+            return ActionResult(
+                success=False,
+                action="vision_click",
+                message="Vision module not available"
+            )
+        
+        try:
+            # Take screenshot
+            screenshot = await self.take_screenshot()
+            
+            # Use AI to find element
+            print(f"   👁️ Looking for: {element_description}")
+            location = await self.vision.find_element(screenshot, element_description, element_type)
+            
+            if not location.found:
+                return ActionResult(
+                    success=False,
+                    action="vision_click",
+                    message=f"Could not find: {element_description}",
+                    screenshot=screenshot,
+                    vision_used=True
+                )
+            
+            print(f"   👁️ Found at ({location.x}, {location.y}) with {location.confidence:.0%} confidence")
+            
+            # Click at coordinates
+            await self.page.mouse.click(location.x, location.y)
+            await asyncio.sleep(0.5)  # Wait for UI response
+            
+            return ActionResult(
+                success=True,
+                action="vision_click",
+                message=f"Clicked {element_description} at ({location.x}, {location.y})",
+                screenshot=await self.take_screenshot(),
+                vision_used=True,
+                data={
+                    "element": element_description,
+                    "coordinates": {"x": location.x, "y": location.y},
+                    "confidence": location.confidence
+                }
+            )
+        
+        except Exception as e:
+            return ActionResult(
+                success=False,
+                action="vision_click",
+                message=f"Vision click failed: {str(e)}",
+                vision_used=True
+            )
+    
+    async def type_with_vision(self, field_description: str, text: str) -> ActionResult:
+        """
+        Type into a field using AI Vision to find it
+        """
+        if not self.vision or not self.vision.model:
+            return ActionResult(
+                success=False,
+                action="vision_type",
+                message="Vision module not available"
+            )
+        
+        try:
+            screenshot = await self.take_screenshot()
+            
+            print(f"   👁️ Looking for input: {field_description}")
+            location = await self.vision.find_element(screenshot, field_description, "input")
+            
+            if not location.found:
+                return ActionResult(
+                    success=False,
+                    action="vision_type",
+                    message=f"Could not find input: {field_description}",
+                    screenshot=screenshot,
+                    vision_used=True
+                )
+            
+            print(f"   👁️ Found input at ({location.x}, {location.y})")
+            
+            # Click to focus, then type
+            await self.page.mouse.click(location.x, location.y)
+            await asyncio.sleep(0.2)
+            await self.page.keyboard.type(text)
+            
+            return ActionResult(
+                success=True,
+                action="vision_type",
+                message=f"Typed into {field_description}",
+                screenshot=await self.take_screenshot(),
+                vision_used=True
+            )
+        
+        except Exception as e:
+            return ActionResult(
+                success=False,
+                action="vision_type",
+                message=f"Vision type failed: {str(e)}",
+                vision_used=True
+            )
+    
+    async def analyze_current_page(self) -> Dict[str, Any]:
+        """
+        Use Vision AI to understand current page state
+        """
+        if not self.vision or not self.vision.model:
+            return {"error": "Vision module not available"}
+        
+        try:
+            screenshot = await self.take_screenshot()
+            analysis = await self.vision.analyze_page(screenshot)
+            
+            return {
+                "page_type": analysis.page_type,
+                "current_state": analysis.current_state,
+                "elements": analysis.elements,
+                "suggestions": analysis.suggestions
+            }
+        
+        except Exception as e:
+            return {"error": str(e)}
+    
+    async def verify_action_success(self, expected_outcome: str) -> Tuple[bool, str]:
+        """
+        Use Vision AI to verify if an action succeeded
+        """
+        if not self.vision or not self.vision.model:
+            return True, "Verification skipped (no vision)"
+        
+        try:
+            screenshot = await self.take_screenshot()
+            return await self.vision.verify_action(screenshot, expected_outcome)
+        except Exception as e:
+            return True, f"Verification error: {e}"
+    
+    async def smart_click(self, element_description: str, fallback_selector: str = None) -> ActionResult:
+        """
+        Smart click - tries Vision first, falls back to selector
+        
+        This is the HYBRID APPROACH mentioned in the submission:
+        1. Try Vision-based detection (robust to UI changes)
+        2. Fall back to DOM selectors if Vision fails
+        """
+        # Try Vision first if available
+        if self.vision and self.vision.model and config.vision_enabled:
+            result = await self.click_with_vision(element_description)
+            if result.success:
+                return result
+            print(f"   ⚠️ Vision failed, trying selector fallback...")
+        
+        # Fallback to selector
+        if fallback_selector:
+            try:
+                await self.page.click(fallback_selector)
+                await asyncio.sleep(0.3)
+                return ActionResult(
+                    success=True,
+                    action="selector_click",
+                    message=f"Clicked {element_description} via selector",
+                    screenshot=await self.take_screenshot(),
+                    vision_used=False
+                )
+            except Exception as e:
+                return ActionResult(
+                    success=False,
+                    action="click",
+                    message=f"Both vision and selector failed: {str(e)}"
+                )
+        
+        return ActionResult(
+            success=False,
+            action="click",
+            message=f"Could not click {element_description}"
+        )
     
     async def get_page_state(self) -> Dict[str, Any]:
         """Get current page state for AI analysis"""
