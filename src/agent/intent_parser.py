@@ -187,7 +187,7 @@ class IntentParser:
         # Extract plain numbers if no currency symbol (only for money-related commands)
         if "amount" not in params and action in ["pay_bill", "fund_transfer", "buy_gold"]:
             # Look for amount keywords near numbers
-            amount_keywords = ["worth", "of", "amount", "pay", "transfer", "send"]
+            amount_keywords = ["worth", "of", "amount", "pay", "transfer", "send", "invest", "buy", "purchase"]
             if any(kw in command.lower() for kw in amount_keywords):
                 number_pattern = r'\b(\d+(?:,\d{3})*(?:\.\d{2})?)\b'
                 numbers = re.findall(number_pattern, command)

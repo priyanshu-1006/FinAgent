@@ -728,22 +728,41 @@
 
       // Handle WebSocket messages
       function handleMessage(data) {
+        if (!data || !data.type) {
+          console.warn("Invalid WebSocket message:", data);
+          return;
+        }
+
         switch (data.type) {
           case "status":
-            addLog(data.message, "info");
+            if (data.message) {
+              addLog(data.message, "info");
+            }
             break;
           case "screenshot":
-            updatePreview(data.screenshot);
+            if (data.data) {
+              updatePreview(data.data);
+            }
             break;
           case "approval_request":
-            showApprovalModal(data.request);
+            if (data.data) {
+              showApprovalModal(data.data);
+            }
             break;
           case "task_update":
-            addLog(`Task: ${data.task.status}`, "info");
+            if (data.data && data.data.status) {
+              addLog(`Task: ${data.data.status}`, "info");
+            } else if (data.message) {
+              addLog(data.message, "info");
+            }
             break;
           case "error":
-            addLog(data.message, "error");
+            if (data.message) {
+              addLog(data.message, "error");
+            }
             break;
+          default:
+            console.log("Unknown message type:", data.type, data);
         }
       }
 
@@ -768,25 +787,48 @@
 
       // Update browser preview
       function updatePreview(screenshot) {
-        previewContainer.innerHTML = `
-                <img src="data:image/png;base64,${screenshot}" class="preview-image" alt="Browser Preview">
+        if (!screenshot || screenshot.trim() === "") {
+          console.warn("Invalid screenshot data");
+          return;
+        }
+
+        try {
+          previewContainer.innerHTML = `
+                <img src="data:image/png;base64,${screenshot}" class="preview-image" alt="Browser Preview" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\'preview-placeholder\'><div class=\'icon\'>⚠️</div><p>Failed to load preview</p></div>';">
             `;
+        } catch (error) {
+          console.error("Failed to update preview:", error);
+          addLog("Failed to display browser preview", "warning");
+        }
       }
 
       // Show approval modal
       function showApprovalModal(request) {
+        if (!request || !request.id) {
+          console.error("Invalid approval request:", request);
+          addLog("Received invalid approval request", "error");
+          return;
+        }
+
         currentApprovalId = request.id;
 
         // Populate details
         approvalDetails.innerHTML = "";
-        for (const [key, value] of Object.entries(request.details)) {
-          const row = document.createElement("div");
-          row.className = "detail-row";
-          row.innerHTML = `
-                    <span class="detail-label">${key}:</span>
-                    <span class="detail-value">${value}</span>
-                `;
-          approvalDetails.appendChild(row);
+        const details = request.details || {};
+
+        if (Object.keys(details).length === 0) {
+          approvalDetails.innerHTML =
+            '<div class="detail-row"><span class="detail-label">Action</span><span class="detail-value">Pending approval</span></div>';
+        } else {
+          for (const [key, value] of Object.entries(details)) {
+            const row = document.createElement("div");
+            row.className = "detail-row";
+            row.innerHTML = `
+                      <span class="detail-label">${key}:</span>
+                      <span class="detail-value">${value || "N/A"}</span>
+                  `;
+            approvalDetails.appendChild(row);
+          }
         }
 
         // Show modal
