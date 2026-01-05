@@ -1,0 +1,140 @@
+/* ===== Buy Gold Page ===== */
+
+/* ===== Gold Rate Card ===== */
+.gold-rate-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+}
+
+.gold-icon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.gold-info {
+  flex: 1;
+}
+
+.gold-label {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.gold-rate {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.gold-update {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+/* ===== Gold Holdings ===== */
+.gold-holdings {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.gold-holdings p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.gold-holdings strong {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.holdings-value {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+/* ===== Buy Type Toggle ===== */
+.buy-type-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: var(--bg-card);
+  padding: 6px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.toggle-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.toggle-btn:hover {
+  color: var(--text-primary);
+}
+
+.toggle-btn.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* ===== Conversion Hint ===== */
+.conversion-hint {
+  margin-top: 10px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.conversion-hint strong {
+  color: var(--primary-light);
+  font-weight: 600;
+}
+
+/* ===== Responsive Buy Gold ===== */
+@media (max-width: 480px) {
+  .gold-rate-card {
+    padding: 16px;
+  }
+
+  .gold-icon {
+    font-size: 2rem;
+  }
+
+  .gold-rate {
+    font-size: 1.2rem;
+  }
+
+  .toggle-btn {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .buy-type-toggle {
+    flex-direction: column;
+  }
+
+  .toggle-btn {
+    padding: 12px;
+  }
+}

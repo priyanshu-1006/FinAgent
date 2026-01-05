@@ -1,0 +1,143 @@
+/* ===== Pay Bills Page ===== */
+.form-container {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.form-container h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+/* ===== Biller Categories ===== */
+.biller-categories {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.biller-categories::-webkit-scrollbar {
+  display: none;
+}
+
+.biller-cat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.biller-cat:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--primary-light);
+}
+
+.biller-cat.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+/* ===== Payment Form ===== */
+.payment-form {
+  margin-top: 20px;
+}
+
+/* ===== Payment Summary ===== */
+.payment-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 24px;
+  animation: fadeIn 0.3s ease;
+}
+
+.payment-summary h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 0.95rem;
+}
+
+.summary-row span:first-child {
+  color: var(--text-secondary);
+}
+
+.summary-row span:last-child {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.summary-row.total {
+  margin-top: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.summary-row.total span:last-child {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary-light);
+}
+
+/* ===== Responsive Pay Bills ===== */
+@media (max-width: 480px) {
+  .form-container {
+    padding: 16px;
+  }
+
+  .form-container h2 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+
+  .biller-cat {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+
+  .payment-summary {
+    padding: 16px;
+  }
+
+  .summary-row {
+    font-size: 0.9rem;
+  }
+
+  .summary-row.total span:last-child {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .biller-cat {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+}

@@ -1,0 +1,88 @@
+/* ===== Fund Transfer Page ===== */
+
+/* ===== Beneficiary List ===== */
+.beneficiary-list {
+  margin-bottom: 28px;
+}
+
+.beneficiary-list h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+.beneficiary-cards {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.beneficiary-cards::-webkit-scrollbar {
+  display: none;
+}
+
+.beneficiary-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition);
+  flex-shrink: 0;
+  min-width: 100px;
+}
+
+.beneficiary-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.beneficiary-card.selected {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-glow);
+}
+
+.ben-avatar {
+  font-size: 2rem;
+}
+
+.ben-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.ben-account {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ===== Responsive Fund Transfer ===== */
+@media (max-width: 480px) {
+  .beneficiary-card {
+    padding: 14px 16px;
+    min-width: 90px;
+  }
+
+  .ben-avatar {
+    font-size: 1.6rem;
+  }
+
+  .ben-name {
+    font-size: 0.85rem;
+  }
+
+  .ben-account {
+    font-size: 0.7rem;
+  }
+}

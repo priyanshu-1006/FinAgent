@@ -418,11 +418,16 @@ class TaskOrchestrator:
             await self.on_approval_needed(request)
         
         # Wait for approval
+        print(f"⏳ Waiting for user approval for {request.id}...")
         status = await self.conscious_pause.wait_for_approval(request)
+        print(f"✅ Approval status received: {status.value}")
         
         if status == ApprovalStatus.APPROVED:
             # Proceed with confirmation
-            return await self.browser.confirm_action()
+            print("   Confirming action in browser...")
+            result = await self.browser.confirm_action()
+            print(f"   Confirmation result: {result.success}")
+            return result
         
         elif status == ApprovalStatus.REJECTED:
             await self.browser.cancel_action()

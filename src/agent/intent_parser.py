@@ -184,12 +184,15 @@ class IntentParser:
             amount_str = amount_match.group(1) or amount_match.group(2)
             params["amount"] = float(amount_str.replace(",", ""))
         
-        # Extract plain numbers if no currency symbol
-        if "amount" not in params:
-            number_pattern = r'\b(\d+(?:,\d{3})*(?:\.\d{2})?)\b'
-            numbers = re.findall(number_pattern, command)
-            if numbers:
-                params["amount"] = float(numbers[0].replace(",", ""))
+        # Extract plain numbers if no currency symbol (only for money-related commands)
+        if "amount" not in params and action in ["pay_bill", "fund_transfer", "buy_gold"]:
+            # Look for amount keywords near numbers
+            amount_keywords = ["worth", "of", "amount", "pay", "transfer", "send"]
+            if any(kw in command.lower() for kw in amount_keywords):
+                number_pattern = r'\b(\d+(?:,\d{3})*(?:\.\d{2})?)\b'
+                numbers = re.findall(number_pattern, command)
+                if numbers:
+                    params["amount"] = float(numbers[0].replace(",", ""))
         
         # Action-specific parameter extraction
         if action == "pay_bill":

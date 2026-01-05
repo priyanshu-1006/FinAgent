@@ -311,7 +311,15 @@ async def websocket_endpoint(websocket: WebSocket):
             if message.get("type") == "execute":
                 command = message.get("command")
                 if command and agent:
-                    asyncio.create_task(agent.execute(command))
+                    # Auto-start agent if not running
+                    if not agent.is_running:
+                        await agent.start()
+                    result = await agent.execute(command)
+                    # Send result back through WebSocket
+                    await websocket.send_json({
+                        "type": "execute_result",
+                        "data": result
+                    })
             
             elif message.get("type") == "approve":
                 request_id = message.get("request_id")
