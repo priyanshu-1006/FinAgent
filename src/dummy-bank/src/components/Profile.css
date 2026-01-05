@@ -30,14 +30,68 @@
 }
 
 /* ===== Responsive Profile ===== */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+  .profile-header {
+    margin-bottom: 28px;
+  }
+
   .profile-avatar {
-    width: 80px;
-    height: 80px;
-    font-size: 2.5rem;
+    width: 90px;
+    height: 90px;
+    font-size: 2.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-avatar {
+    width: 85px;
+    height: 85px;
+    margin-bottom: 14px;
   }
 
   .profile-header h2 {
-    font-size: 1.3rem;
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-header {
+    margin-bottom: 24px;
+  }
+
+  .profile-avatar {
+    width: 75px;
+    height: 75px;
+    font-size: 2.3rem;
+    margin-bottom: 12px;
+  }
+
+  .profile-header h2 {
+    font-size: 1.25rem;
+    margin-bottom: 4px;
+  }
+
+  .profile-id {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .profile-header {
+    margin-bottom: 20px;
+  }
+
+  .profile-avatar {
+    width: 65px;
+    height: 65px;
+    font-size: 2rem;
+  }
+
+  .profile-header h2 {
+    font-size: 1.15rem;
+  }
+
+  .profile-id {
+    font-size: 0.8rem;
   }
 }

@@ -252,12 +252,16 @@ Extract:
 1. action - The primary action to perform (must be one of the available actions)
 2. confidence - How confident you are (0.0 to 1.0)
 3. parameters - Relevant parameters like:
-   - amount (numeric)
+   - amount (numeric) - ONLY include if explicitly mentioned in the command
    - recipient (for transfers)
    - biller_type (electricity, gas, water, mobile, broadband)
    - biller_name (company name)
-   - grams (for gold purchase)
+   - grams (for gold purchase) - ONLY if explicitly mentioned
    - buy_type ("amount" or "grams" for gold)
+
+IMPORTANT: Do NOT add default values for amount, grams, or any numeric fields. 
+Only include parameters that are explicitly stated in the user's command.
+If the user doesn't specify an amount, leave the amount parameter out completely.
 
 Respond with valid JSON only:
 {{

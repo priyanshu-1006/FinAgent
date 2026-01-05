@@ -110,31 +110,103 @@
 }
 
 /* ===== Responsive Buy Gold ===== */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   .gold-rate-card {
-    padding: 16px;
+    padding: 18px;
+  }
+
+  .gold-holdings {
+    padding: 14px 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .gold-rate-card {
+    gap: 14px;
   }
 
   .gold-icon {
-    font-size: 2rem;
+    font-size: 2.2rem;
   }
 
   .gold-rate {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gold-rate-card {
+    padding: 14px;
+    gap: 12px;
+    margin-bottom: 16px;
+    border-radius: var(--radius);
+  }
+
+  .gold-icon {
+    font-size: 1.8rem;
+  }
+
+  .gold-label {
+    font-size: 0.8rem;
+  }
+
+  .gold-rate {
+    font-size: 1.15rem;
+  }
+
+  .gold-update {
+    font-size: 0.7rem;
+  }
+
+  .gold-holdings {
+    padding: 12px 14px;
+    margin-bottom: 20px;
+  }
+
+  .gold-holdings p {
+    font-size: 0.9rem;
+  }
+
+  .holdings-value {
+    font-size: 0.8rem;
+  }
+
+  .buy-type-toggle {
+    margin-bottom: 20px;
+    padding: 5px;
   }
 
   .toggle-btn {
     padding: 10px 12px;
     font-size: 0.85rem;
   }
+
+  .conversion-hint {
+    font-size: 0.85rem;
+  }
 }
 
 @media (max-width: 360px) {
+  .gold-rate-card {
+    padding: 12px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .gold-icon {
+    font-size: 2rem;
+  }
+
   .buy-type-toggle {
     flex-direction: column;
+    gap: 6px;
   }
 
   .toggle-btn {
     padding: 12px;
+  }
+
+  .gold-holdings {
+    padding: 10px 12px;
   }
 }

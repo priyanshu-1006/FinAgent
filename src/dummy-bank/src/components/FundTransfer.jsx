@@ -58,7 +58,7 @@ function FundTransfer({ balance, onBack, onSubmit }) {
   };
 
   return (
-    <div className="fund-transfer-page page active">
+    <div id="fund-transfer-page" className="fund-transfer-page page active">
       <nav className="navbar">
         <button className="btn-back" onClick={onBack}>
           ← Back
@@ -79,6 +79,7 @@ function FundTransfer({ balance, onBack, onSubmit }) {
                 className={`beneficiary-card ${
                   account === ben.account ? "selected" : ""
                 }`}
+                data-name={ben.name}
                 onClick={() => selectBeneficiary(ben)}
               >
                 <span className="ben-avatar">{ben.avatar}</span>
@@ -89,7 +90,11 @@ function FundTransfer({ balance, onBack, onSubmit }) {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="payment-form">
+        <form
+          id="transfer-form"
+          onSubmit={handleSubmit}
+          className="payment-form"
+        >
           <div className="form-group">
             <label htmlFor="recipient-name">Recipient Name</label>
             <input
@@ -174,6 +179,7 @@ function FundTransfer({ balance, onBack, onSubmit }) {
 
           <button
             type="submit"
+            id="transfer-btn"
             className="btn btn-primary btn-block"
             disabled={!!error || !amount}
           >

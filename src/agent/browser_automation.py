@@ -588,20 +588,27 @@ class BrowserAutomation:
                 await self.navigate_to_buy_gold()
                 await asyncio.sleep(0.5)
             
-            # Set default amount if none provided
-            if amount is None and grams is None:
-                amount = 1000
-            
             if grams:
                 # Switch to grams mode
                 await self.page.click("[data-type='grams']")
                 await asyncio.sleep(0.3)
                 await self.page.fill("#gold-grams", "")
                 await self.page.fill("#gold-grams", str(grams))
-            else:
+            elif amount:
                 # Amount mode (default)
                 await self.page.fill("#gold-amount", "")
                 await self.page.fill("#gold-amount", str(int(amount)))
+            else:
+                # Just navigate to the page without filling values
+                return ActionResult(
+                    success=True,
+                    action="buy_gold",
+                    message="Navigated to Digital Gold page. Please specify the amount or grams to purchase.",
+                    screenshot=await self.take_screenshot(),
+                    data={
+                        "awaiting_input": True
+                    }
+                )
             
             await asyncio.sleep(0.5)
             

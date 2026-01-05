@@ -61,7 +61,7 @@ function PayBills({ balance, onBack, onSubmit }) {
   };
 
   return (
-    <div className="pay-bills-page page active">
+    <div id="pay-bills-page" className="pay-bills-page page active">
       <nav className="navbar">
         <button className="btn-back" onClick={onBack}>
           ← Back
@@ -165,6 +165,7 @@ function PayBills({ balance, onBack, onSubmit }) {
 
           <button
             type="submit"
+            id="pay-bill-btn"
             className="btn btn-primary btn-block"
             disabled={!!error || !amount}
           >

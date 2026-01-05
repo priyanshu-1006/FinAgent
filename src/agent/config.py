@@ -69,11 +69,11 @@ class Config:
     # Which AI model to use: "openai" or "gemini"
     ai_provider: str = "gemini"
     openai_model: str = "gpt-4o-mini"
-    gemini_model: str = "gemini-2.0-flash-exp"
+    gemini_model: str = "gemini-3-flash-preview"
     
     # Vision Model Settings (for UI element detection)
     vision_enabled: bool = True
-    vision_model: str = "gemini-2.0-flash-exp"
+    vision_model: str = "gemini-3-flash-preview"
     
     # Browser Settings
     browser_type: str = "chromium"

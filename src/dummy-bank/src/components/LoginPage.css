@@ -75,44 +75,107 @@
 }
 
 /* ===== Responsive Login ===== */
+@media (max-width: 768px) {
+  .login-container {
+    max-width: 400px;
+    padding: 36px 28px;
+  }
+}
+
 @media (max-width: 640px) {
   .login-page {
     padding: 16px;
   }
-  
+
   .login-container {
     max-width: 100%;
+    padding: 32px 24px;
+  }
+
+  .bank-logo {
+    margin-bottom: 28px;
+  }
+
+  .logo-icon {
+    font-size: 3.2rem;
+    margin-bottom: 14px;
+  }
+
+  .bank-logo h1 {
+    font-size: 1.6rem;
+  }
+
+  .tagline {
+    font-size: 0.9rem;
   }
 }
 
 @media (max-width: 480px) {
   .login-page {
     padding: 12px;
+    align-items: center;
+    justify-content: center;
   }
-  
-    padding: 32px 24px;
+
+  .login-container {
+    padding: 28px 20px;
     border-radius: var(--radius-lg);
+    max-width: 100%;
+  }
+
+  .bank-logo {
+    margin-bottom: 24px;
   }
 
   .logo-icon {
-    font-size: 3rem;
+    font-size: 2.8rem;
+    margin-bottom: 12px;
   }
 
   .bank-logo h1 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
+    margin-bottom: 6px;
+  }
+
+  .tagline {
+    font-size: 0.85rem;
+  }
+
+  .login-form {
+    margin-top: 20px;
+  }
+
+  .demo-hint {
+    margin-top: 16px;
+    font-size: 0.8rem;
+    padding: 10px;
   }
 }
 
 @media (max-width: 360px) {
+  .login-page {
+    padding: 10px;
+  }
+
   .login-container {
-    padding: 28px 20px;
+    padding: 24px 16px;
   }
 
   .logo-icon {
-    font-size: 2.5rem;
+    font-size: 2.4rem;
+    margin-bottom: 10px;
   }
 
   .bank-logo h1 {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
+  }
+
+  .tagline {
+    font-size: 0.8rem;
+  }
+
+  .demo-hint {
+    font-size: 0.75rem;
+    padding: 8px;
   }
 }

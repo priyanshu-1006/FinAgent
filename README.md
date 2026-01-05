@@ -1,4 +1,5 @@
 # FinAgent - AI-Powered Financial Automation Agent
+
 ## IIT Bombay Techfest Hackathon | Jio Financial Services
 
 ![Status](https://img.shields.io/badge/Status-Prototype-blue)
@@ -72,7 +73,8 @@ cd finagent
 
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+venv\Scripts\activate  # On Windows
+# source venv/bin/activate  # On Linux/Mac
 
 # Install dependencies
 pip install -r requirements.txt
@@ -81,30 +83,38 @@ pip install -r requirements.txt
 playwright install chromium
 
 # Set up environment variables
-cp .env.example .env
-# Edit .env with your API keys
+# Create a .env file and add your API keys:
+# OPENAI_API_KEY=your_openai_key
+# Or GEMINI_API_KEY=your_gemini_key
 ```
 
 ### Running the Agent
 
-#### 1. Start the Dummy Bank (required)
+#### 1. Start the Dummy Bank (Terminal 1)
+
 ```bash
 cd src/dummy-bank
-python -m http.server 8080
+npm install
+npm run dev
+# Bank will run on http://localhost:8080
 ```
 
-#### 2. Run in CLI Mode
+#### 2. Run FinAgent Server (Terminal 2)
+
+```bash
+python main.py server
+# Dashboard: http://localhost:8000
+# FinAgent UI: http://localhost:8000/static/index.html
+```
+
+#### 3. Alternative: CLI Mode
+
 ```bash
 python main.py cli
 ```
 
-#### 3. Run with Dashboard (Recommended)
-```bash
-python main.py server
-# Open http://localhost:8000 in your browser
-```
-
 #### 4. Run Demo
+
 ```bash
 python main.py demo
 ```
@@ -131,9 +141,27 @@ python main.py demo
 "send 10000 to account number 9876543210"
 
 # Buy Gold
+"invest in gold"  # Opens gold page without filling amount
 "buy gold worth 2000 rupees"
 "purchase 0.5 grams of digital gold"
+
+# Profile
+"show my profile"
+"view my account details"
 ```
+
+### Web Dashboard Usage
+
+1. Open http://localhost:8000/static/index.html
+2. Wait for "Connected" status (green indicator)
+3. Type commands in the Command Center
+4. View live browser preview and activity log
+5. Approve/reject transactions when prompted
+
+### Demo Credentials
+
+- **Username**: demo_user
+- **Password**: demo123
 
 ### Programmatic Usage
 
@@ -144,11 +172,11 @@ import asyncio
 async def main():
     agent = FinAgent()
     await agent.start()
-    
+
     # Execute commands
     result = await agent.execute("pay electricity bill of 1500 to Adani")
     print(result)
-    
+
     await agent.stop()
 
 asyncio.run(main())
@@ -164,10 +192,29 @@ For all high-risk financial actions, FinAgent implements a **Conscious Pause**:
 4. **Timeout Protection** - Auto-cancels if no response within 60 seconds
 
 ### High-Risk Actions Requiring Approval:
-- Bill Payments
-- Fund Transfers
-- Gold Purchases
-- Profile Updates
+
+- ✓ Bill Payments
+- ✓ Fund Transfers
+- ✓ Gold Purchases
+- ✓ Profile Updates
+
+### Safety Features:
+
+- Transaction amount limits
+- Daily transaction caps
+- Audit logging of all actions
+- Session-based tracking
+- Error recovery mechanisms
+
+## 🔄 Workflow
+
+1. **User Input** → Natural language command
+2. **Intent Parsing** → AI extracts action and parameters
+3. **Task Planning** → Orchestrator breaks down into steps
+4. **Browser Control** → Playwright executes automation
+5. **Conscious Pause** → Human approval for risky actions
+6. **Confirmation** → Final execution with user consent
+7. **Logging** → Complete audit trail
 
 ## 📁 Project Structure
 
@@ -177,29 +224,49 @@ FinAgent-AI/
 │   ├── agent/                 # Core AI Agent
 │   │   ├── __init__.py
 │   │   ├── agent.py           # Main agent class
-│   │   ├── config.py          # Configuration
-│   │   ├── intent_parser.py   # NLP intent extraction
-│   │   ├── browser_automation.py  # Playwright controller
+│   │   ├── config.py          # Configuration management
+│   │   ├── intent_parser.py   # NLP intent extraction (AI-powered)
+│   │   ├── browser_automation.py  # Playwright browser controller
 │   │   ├── conscious_pause.py # Human approval system
-│   │   └── orchestrator.py    # Multi-step task planning
+│   │   ├── orchestrator.py    # Multi-step task planning
+│   │   ├── session_manager.py # Session state management
+│   │   ├── audit_logger.py    # Action logging & audit trail
+│   │   ├── vision.py          # Visual element detection
+│   │   ├── error_recovery.py  # Error handling & retry logic
+│   │   ├── transaction_limits.py  # Safety limits
+│   │   └── user_errors.py     # Custom exceptions
 │   │
 │   ├── backend/               # FastAPI Server
 │   │   ├── __init__.py
-│   │   └── server.py          # REST API & WebSocket
+│   │   └── server.py          # REST API & WebSocket server
 │   │
-│   ├── frontend/              # User Dashboard
-│   │   └── index.html         # Dashboard UI
-│   │
-│   └── dummy-bank/            # Target Banking Website
-│       ├── index.html         # Bank pages
-│       ├── styles.css         # Styling
-│       └── script.js          # Bank functionality
+│   └── dummy-bank/            # Demo Banking Website (React)
+│       ├── src/
+│       │   ├── App.jsx        # Main app component
+│       │   ├── App.css        # Global styles (fully responsive)
+│       │   └── components/    # UI components
+│       │       ├── Dashboard.jsx    # Account overview
+│       │       ├── LoginPage.jsx    # Login interface
+│       │       ├── PayBills.jsx     # Bill payment
+│       │       ├── FundTransfer.jsx # Money transfer
+│       │       ├── BuyGold.jsx      # Gold investment
+│       │       ├── Profile.jsx      # User profile
+│       │       └── Modal.jsx        # Confirmation modals
+│       ├── index.html         # Entry point
+│       ├── package.json       # NPM dependencies
+│       └── vite.config.js     # Vite configuration
 │
-├── docs/                      # Documentation
 ├── tests/                     # Test suite
+│   ├── test_intent_parser.py
+│   ├── test_transaction_limits.py
+│   └── test_user_errors.py
+│
+├── logs/                      # Execution logs
+├── sessions/                  # Session data
 ├── main.py                    # Entry point
+├── demo.py                    # Demo script
+├── test_e2e.py               # End-to-end tests
 ├── requirements.txt           # Python dependencies
-├── .env.example              # Environment template
 └── README.md                 # This file
 ```
 
@@ -222,20 +289,49 @@ pytest tests/test_intent_parser.py
 
 ## 📊 Evaluation Criteria
 
-| Criteria | Implementation |
-|----------|---------------|
-| **Feasibility** | Uses proven technologies (Playwright, GPT-4o, FastAPI) |
-| **Technical Approach** | Modular architecture with clear separation of concerns |
-| **Innovation** | Conscious Pause mechanism for safe financial automation |
-| **Presentation** | Clean dashboard UI with real-time updates |
+| Criteria               | Implementation                                          |
+| ---------------------- | ------------------------------------------------------- |
+| **Feasibility**        | Uses proven technologies (Playwright, GPT-4o, FastAPI)  |
+| **Technical Approach** | Modular architecture with clear separation of concerns  |
+| **Innovation**         | Conscious Pause mechanism for safe financial automation |
+| **Presentation**       | Clean dashboard UI with real-time updates               |
 
 ## 🛠️ Tech Stack
 
+### Backend & AI
+
 - **AI/NLP**: OpenAI GPT-4o / Google Gemini 1.5 Pro
-- **Browser Automation**: Playwright
-- **Backend**: Python, FastAPI, WebSockets
-- **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
+- **Browser Automation**: Playwright (Chromium)
+- **Backend**: Python 3.10+, FastAPI, WebSockets
 - **Architecture**: Event-driven, async/await
+
+### Frontend & UI
+
+- **Bank Website**: React 18, Vite, Modern CSS
+- **Dashboard**: HTML5, CSS3, Vanilla JavaScript
+- **Design**: Glassmorphism, Fully Responsive (Mobile-first)
+
+### Features
+
+- ✅ Natural Language Processing for intent extraction
+- ✅ Multi-step task orchestration
+- ✅ Real-time browser preview via WebSocket
+- ✅ Session management & audit logging
+- ✅ Transaction limits & safety checks
+- ✅ Error recovery & retry logic
+- ✅ Fully responsive UI (360px - 2560px+)
+- ✅ Conscious Pause for human oversight
+
+## 🎨 UI Features
+
+The dummy bank website is **fully responsive** with:
+
+- **Desktop** (1920px+): Full feature layout
+- **Tablet** (768px-1024px): Optimized grid layouts
+- **Mobile** (360px-767px): Touch-friendly, stacked layout
+- Modern glassmorphism design
+- Smooth animations and transitions
+- Touch-optimized controls
 
 ## 👥 Team
 

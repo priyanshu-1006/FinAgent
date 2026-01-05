@@ -20,7 +20,7 @@ function LoginPage({ onLogin }) {
           <h1>JioFinance Bank</h1>
           <p className="tagline">Your Trusted Digital Partner</p>
         </div>
-        <form onSubmit={handleSubmit} className="login-form">
+        <form id="login-form" onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label htmlFor="username">Username / Mobile Number</label>
             <input
@@ -43,7 +43,11 @@ function LoginPage({ onLogin }) {
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary btn-block">
+          <button
+            type="submit"
+            id="login-btn"
+            className="btn btn-primary btn-block"
+          >
             Login Securely
           </button>
           <p className="demo-hint">Demo: Use any username/password to login</p>

@@ -32,7 +32,7 @@ function Dashboard({ user, balance, transactions, onLogout, onNavigate }) {
   };
 
   return (
-    <div className="dashboard-page page active">
+    <div id="dashboard-page" className="dashboard-page page active">
       <nav className="navbar">
         <div className="nav-brand">
           <span className="logo-icon-small">🏦</span>
@@ -54,7 +54,9 @@ function Dashboard({ user, balance, transactions, onLogout, onNavigate }) {
           </div>
           <div className="balance-info">
             <p className="balance-label">Available Balance</p>
-            <p className="balance-amount">{formatCurrency(balance)}</p>
+            <p className="balance-amount" id="account-balance">
+              {formatCurrency(balance)}
+            </p>
           </div>
         </div>
 
@@ -65,6 +67,7 @@ function Dashboard({ user, balance, transactions, onLogout, onNavigate }) {
               <button
                 key={action.id}
                 className="action-card"
+                data-action={action.id}
                 onClick={() => handleActionClick(action)}
               >
                 <span className="action-icon">{action.icon}</span>

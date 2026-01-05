@@ -63,7 +63,7 @@ function BuyGold({ balance, goldRate, goldHoldings, onBack, onSubmit }) {
   };
 
   return (
-    <div className="buy-gold-page page active">
+    <div id="buy-gold-page" className="buy-gold-page page active">
       <nav className="navbar">
         <button className="btn-back" onClick={onBack}>
           ← Back
@@ -93,10 +93,11 @@ function BuyGold({ balance, goldRate, goldHoldings, onBack, onSubmit }) {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="payment-form">
+        <form id="gold-form" onSubmit={handleSubmit} className="payment-form">
           <div className="buy-type-toggle">
             <button
               type="button"
+              data-type="amount"
               className={`toggle-btn ${buyType === "amount" ? "active" : ""}`}
               onClick={() => setBuyType("amount")}
             >
@@ -104,6 +105,7 @@ function BuyGold({ balance, goldRate, goldHoldings, onBack, onSubmit }) {
             </button>
             <button
               type="button"
+              data-type="grams"
               className={`toggle-btn ${buyType === "grams" ? "active" : ""}`}
               onClick={() => setBuyType("grams")}
             >
@@ -172,6 +174,7 @@ function BuyGold({ balance, goldRate, goldHoldings, onBack, onSubmit }) {
 
           <button
             type="submit"
+            id="buy-gold-btn"
             className="btn btn-primary btn-block"
             disabled={!!error || !amount}
           >

@@ -68,21 +68,71 @@
 }
 
 /* ===== Responsive Fund Transfer ===== */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+  .beneficiary-cards {
+    gap: 10px;
+  }
+
   .beneficiary-card {
-    padding: 14px 16px;
-    min-width: 90px;
+    padding: 14px 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .beneficiary-list h3 {
+    font-size: 0.95rem;
+  }
+
+  .beneficiary-card {
+    min-width: 95px;
+  }
+}
+
+@media (max-width: 480px) {
+  .beneficiary-list {
+    margin-bottom: 20px;
+  }
+
+  .beneficiary-list h3 {
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+  }
+
+  .beneficiary-cards {
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .beneficiary-card {
+    padding: 12px 14px;
+    min-width: 85px;
+    gap: 6px;
   }
 
   .ben-avatar {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
   }
 
   .ben-name {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   .ben-account {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .beneficiary-card {
+    padding: 10px 12px;
+    min-width: 75px;
+  }
+
+  .ben-avatar {
+    font-size: 1.3rem;
+  }
+
+  .ben-name {
+    font-size: 0.75rem;
   }
 }

@@ -125,77 +125,118 @@
 }
 
 /* ===== Responsive Modal ===== */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .modal {
     padding: 20px;
   }
-  
+
+  .modal-content {
+    max-width: 95%;
+    padding: 32px 28px;
+  }
+
+  .modal-details {
+    padding: 14px 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal {
+    padding: 16px;
+  }
+
   .modal-content {
     max-width: 100%;
+    padding: 28px 24px;
+  }
+
+  .modal-icon {
+    font-size: 3rem;
+  }
+
+  .modal-content h2 {
+    font-size: 1.25rem;
   }
 }
 
 @media (max-width: 576px) {
   .modal {
-    padding: 16px;
+    padding: 14px;
     align-items: flex-start;
-    padding-top: 40px;
+    padding-top: 32px;
   }
-  
+
   .modal-content {
-    padding: 28px 20px;
+    padding: 24px 20px;
     border-radius: var(--radius-lg);
     max-width: 100%;
     max-height: 85vh;
   }
-  
+
   .modal-icon {
-    font-size: 3rem;
+    font-size: 2.8rem;
   }
-  
+
   .modal-content h2 {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
   }
-  
+
   .modal-content p {
     font-size: 0.9rem;
   }
-  
+
   .modal-details {
-    padding: 14px 16px;
+    padding: 12px 14px;
+    margin: 16px 0;
   }
-  
+
   .modal-details p {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    margin: 8px 0;
   }
-  
+
   .modal-actions {
     flex-direction: column;
     gap: 10px;
+    margin-top: 20px;
   }
-  
+
   .modal-actions .btn {
     width: 100%;
-    padding: 16px;
+    padding: 14px 16px;
     min-height: 48px;
+  }
 }
 
 @media (max-width: 360px) {
   .modal {
-    padding: 12px;
-    padding-top: 30px;
+    padding: 10px;
+    padding-top: 24px;
   }
 
   .modal-content {
-    padding: 24px 16px;
+    padding: 20px 16px;
   }
 
   .modal-icon {
-    font-size: 2.5rem;
-    margin-bottom: 16px;
+    font-size: 2.4rem;
+    margin-bottom: 14px;
   }
 
   .modal-content h2 {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+  }
+
+  .modal-content p {
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+  }
+
+  .modal-details {
+    padding: 10px 12px;
+  }
+
+  .modal-details p {
+    font-size: 0.8rem;
   }
 }

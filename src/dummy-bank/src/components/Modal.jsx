@@ -53,7 +53,11 @@ function Modal({ type, data, onClose, onConfirm }) {
               <button className="btn btn-outline" onClick={onClose}>
                 Cancel
               </button>
-              <button className="btn btn-primary" onClick={onConfirm}>
+              <button
+                id="confirm-proceed-btn"
+                className="btn btn-primary"
+                onClick={onConfirm}
+              >
                 Confirm & Pay
               </button>
             </div>
