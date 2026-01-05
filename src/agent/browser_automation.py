@@ -403,8 +403,15 @@ class BrowserAutomation:
     
     async def navigate_to_pay_bills(self) -> ActionResult:
         """Navigate to bill payment page"""
-        try:
-            await self.page.click("[data-action='pay-bills']")
+        try:            # Ensure we're on the dashboard first
+            dashboard = await self.page.query_selector("#dashboard-page.active")
+            if not dashboard:
+                print("   Not on dashboard, navigating there first...")
+                await self.go_back_to_dashboard()
+                await asyncio.sleep(0.5)
+            
+            # Wait for the button to be available
+            await self.page.wait_for_selector("[data-action='pay-bills']", timeout=5000)            await self.page.click("[data-action='pay-bills']")
             await self.page.wait_for_selector("#pay-bills-page.active, #bill-pay-form", timeout=3000)
             
             return ActionResult(
@@ -484,6 +491,26 @@ class BrowserAutomation:
     async def navigate_to_fund_transfer(self) -> ActionResult:
         """Navigate to fund transfer page"""
         try:
+            # Check if we're on the dashboard
+            dashboard = await self.page.query_selector("#dashboard-page.active")
+            if not dashboard:
+                print("   Dashboard not active, checking if it exists...")
+                dashboard_exists = await self.page.query_selector("#dashboard-page")
+                if not dashboard_exists:
+                    return ActionResult(False, "navigate", "Dashboard page not found. Please ensure you're logged in.")
+                
+                # Try to go back
+                try:
+                    back_btn = await self.page.query_selector(".btn-back")
+                    if back_btn:
+                        await back_btn.click()
+                        await asyncio.sleep(0.5)
+                except:
+                    pass
+            
+            # Wait for the fund-transfer button
+            print("   Waiting for fund-transfer button...")
+            await self.page.wait_for_selector("[data-action='fund-transfer']", timeout=5000, state="visible")
             await self.page.click("[data-action='fund-transfer']")
             await self.page.wait_for_selector("#fund-transfer-page.active, #transfer-form", timeout=3000)
             
@@ -494,7 +521,8 @@ class BrowserAutomation:
                 screenshot=await self.take_screenshot()
             )
         except Exception as e:
-            return ActionResult(False, "navigate", f"Navigation failed: {str(e)}")
+            screenshot = await self.take_screenshot()
+            return ActionResult(False, "navigate", f"Navigation failed: {str(e)}", screenshot=screenshot)
     
     async def fund_transfer(self, recipient: str = "Mom", account: str = "9876543210", ifsc: str = "JFIN0001234", amount: float = 1000) -> ActionResult:
         """Transfer money to another account"""
@@ -567,6 +595,34 @@ class BrowserAutomation:
     async def navigate_to_buy_gold(self) -> ActionResult:
         """Navigate to digital gold page"""
         try:
+            # Check if we're on the dashboard first
+            dashboard = await self.page.query_selector("#dashboard-page.active")
+            if not dashboard:
+                print("   Dashboard not active, checking if it exists...")
+                dashboard_exists = await self.page.query_selector("#dashboard-page")
+                if not dashboard_exists:
+                    return ActionResult(False, "navigate", "Dashboard page not found. Please ensure you're logged in.")
+                
+                # Dashboard exists but not active - try to activate it
+                print("   Attempting to navigate back to dashboard...")
+                try:
+                    back_btn = await self.page.query_selector(".btn-back")
+                    if back_btn:
+                        await back_btn.click()
+                        await asyncio.sleep(0.5)
+                except:
+                    pass
+            
+            # Wait and check for the buy-gold button
+            print("   Waiting for buy-gold button...")
+            try:
+                await self.page.wait_for_selector("[data-action='buy-gold']", timeout=5000, state="visible")
+            except:
+                # Take a screenshot to debug
+                screenshot = await self.take_screenshot()
+                return ActionResult(False, "navigate", f"Buy gold button not found. Dashboard may not be loaded.", screenshot=screenshot)
+            
+            # Click the button
             await self.page.click("[data-action='buy-gold']")
             await self.page.wait_for_selector("#buy-gold-page.active, #gold-form", timeout=3000)
             
@@ -577,7 +633,8 @@ class BrowserAutomation:
                 screenshot=await self.take_screenshot()
             )
         except Exception as e:
-            return ActionResult(False, "navigate", f"Navigation failed: {str(e)}")
+            screenshot = await self.take_screenshot()
+            return ActionResult(False, "navigate", f"Navigation failed: {str(e)}", screenshot=screenshot)
     
     async def buy_gold(self, amount: float = None, grams: float = None) -> ActionResult:
         """Buy digital gold"""
