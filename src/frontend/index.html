@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FinAgent - AI Financial Automation Control Center</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --primary: #6366f1;
+        --primary-light: #818cf8;
+        --primary-dark: #4f46e5;
+        --success: #10b981;
+        --error: #ef4444;
+        --warning: #f59e0b;
+        --bg-dark: #0f0f1a;
+        --bg-darker: #08080f;
+        --bg-card: rgba(30, 30, 50, 0.6);
+        --text-primary: #f8fafc;
+        --text-secondary: #cbd5e1;
+        --text-muted: #64748b;
+        --border: rgba(255, 255, 255, 0.08);
+        --glass: rgba(255, 255, 255, 0.03);
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+        background: var(--bg-dark);
+        color: var(--text-primary);
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      .container {
+        display: grid;
+        grid-template-columns: 400px 1fr;
+        grid-template-rows: auto 1fr;
+        height: 100vh;
+        gap: 0;
+      }
+
+      /* Header */
+      .header {
+        grid-column: 1 / -1;
+        background: rgba(15, 15, 26, 0.95);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 100;
+      }
+
+      .header-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .logo {
+        font-size: 2rem;
+      }
+
+      .title-text h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(
+          135deg,
+          #6366f1 0%,
+          #8b5cf6 50%,
+          #a855f7 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .title-text p {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+      }
+
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--error);
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .status-dot.connected {
+        background: var(--success);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      /* Sidebar */
+      .sidebar {
+        background: var(--bg-darker);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .command-section {
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .command-section h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .command-input-wrapper {
+        position: relative;
+      }
+
+      .command-input {
+        width: 100%;
+        padding: 14px 16px;
+        padding-right: 48px;
+        background: var(--glass);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        transition: all 0.3s;
+        font-family: inherit;
+      }
+
+      .command-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+      }
+
+      .execute-btn {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: var(--primary);
+        border: none;
+        color: white;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+      }
+
+      .execute-btn:hover {
+        background: var(--primary-light);
+        transform: translateY(-50%) scale(1.05);
+      }
+
+      .execute-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .quick-commands {
+        margin-top: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .quick-cmd {
+        padding: 6px 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .quick-cmd:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+
+      /* Activity Log */
+      .activity-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .activity-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .activity-header h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .activity-log {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 20px;
+      }
+
+      .log-entry {
+        padding: 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 8px;
+        animation: slideIn 0.3s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .log-entry .timestamp {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+
+      .log-entry .message {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+      }
+
+      .log-entry.success {
+        border-left: 3px solid var(--success);
+      }
+
+      .log-entry.error {
+        border-left: 3px solid var(--error);
+      }
+
+      .log-entry.info {
+        border-left: 3px solid var(--primary);
+      }
+
+      .log-entry.warning {
+        border-left: 3px solid var(--warning);
+      }
+
+      /* Main Content */
+      .main-content {
+        display: flex;
+        flex-direction: column;
+        background: var(--bg-dark);
+        overflow: hidden;
+      }
+
+      .preview-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        overflow: hidden;
+      }
+
+      .preview-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+
+      .preview-header h2 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .browser-controls {
+        display: flex;
+        gap: 8px;
+      }
+
+      .control-btn {
+        padding: 8px 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.85rem;
+      }
+
+      .control-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+
+      .preview-container {
+        flex: 1;
+        background: var(--bg-darker);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .preview-image {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      .preview-placeholder {
+        text-align: center;
+        color: var(--text-muted);
+      }
+
+      .preview-placeholder .icon {
+        font-size: 4rem;
+        margin-bottom: 16px;
+        opacity: 0.3;
+      }
+
+      /* Approval Modal */
+      .approval-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(8px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .approval-modal.active {
+        display: flex;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .approval-card {
+        background: var(--bg-darker);
+        border: 1px solid var(--warning);
+        border-radius: 16px;
+        padding: 32px;
+        max-width: 480px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
+          0 0 40px rgba(245, 158, 11, 0.3);
+        animation: modalIn 0.3s ease;
+      }
+
+      @keyframes modalIn {
+        from {
+          opacity: 0;
+          transform: scale(0.9) translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      .approval-header {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+
+      .approval-icon {
+        font-size: 3.5rem;
+        margin-bottom: 12px;
+      }
+
+      .approval-header h2 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      .approval-header p {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+
+      .approval-details {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .detail-row:last-child {
+        border-bottom: none;
+      }
+
+      .detail-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+
+      .detail-value {
+        color: var(--text-primary);
+        font-weight: 500;
+        font-size: 0.9rem;
+      }
+
+      .approval-actions {
+        display: flex;
+        gap: 12px;
+      }
+
+      .approval-btn {
+        flex: 1;
+        padding: 14px;
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .approve-btn {
+        background: var(--success);
+        color: white;
+      }
+
+      .approve-btn:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+      }
+
+      .reject-btn {
+        background: var(--error);
+        color: white;
+      }
+
+      .reject-btn:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+      }
+
+      .timeout-warning {
+        text-align: center;
+        margin-top: 16px;
+        color: var(--warning);
+        font-size: 0.85rem;
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: var(--bg-darker);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--primary);
+      }
+
+      /* Responsive */
+      @media (max-width: 1024px) {
+        .container {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto 1fr;
+        }
+
+        .sidebar {
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-title">
+          <div class="logo">🤖</div>
+          <div class="title-text">
+            <h1>FinAgent</h1>
+            <p>AI-Powered Financial Automation</p>
+          </div>
+        </div>
+        <div class="status-indicator">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Connecting...</span>
+        </div>
+      </header>
+
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="command-section">
+          <h2>💬 Command Center</h2>
+          <div class="command-input-wrapper">
+            <input
+              type="text"
+              class="command-input"
+              id="commandInput"
+              placeholder="Type a financial command..."
+              autocomplete="off"
+            />
+            <button class="execute-btn" id="executeBtn" title="Execute">
+              ▶
+            </button>
+          </div>
+          <div class="quick-commands">
+            <div class="quick-cmd" data-cmd="login to my account">🔐 Login</div>
+            <div class="quick-cmd" data-cmd="show me my balance">
+              💰 Balance
+            </div>
+            <div class="quick-cmd" data-cmd="pay electricity bill">
+              💡 Pay Bill
+            </div>
+            <div class="quick-cmd" data-cmd="transfer money">💸 Transfer</div>
+            <div class="quick-cmd" data-cmd="buy gold">🥇 Buy Gold</div>
+          </div>
+        </div>
+
+        <div class="activity-section">
+          <div class="activity-header">
+            <h2>📋 Activity Log</h2>
+          </div>
+          <div class="activity-log" id="activityLog">
+            <div class="log-entry info">
+              <div class="timestamp">System</div>
+              <div class="message">
+                FinAgent initialized. Ready to execute commands.
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <div class="preview-section">
+          <div class="preview-header">
+            <h2>🖥️ Browser Preview</h2>
+            <div class="browser-controls">
+              <button class="control-btn" id="startBtn">▶ Start Agent</button>
+              <button class="control-btn" id="stopBtn">⏹ Stop Agent</button>
+            </div>
+          </div>
+          <div class="preview-container" id="previewContainer">
+            <div class="preview-placeholder">
+              <div class="icon">🌐</div>
+              <p>Browser preview will appear here</p>
+              <p style="font-size: 0.85rem; margin-top: 8px">
+                Start the agent to see live automation
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Approval Modal -->
+    <div class="approval-modal" id="approvalModal">
+      <div class="approval-card">
+        <div class="approval-header">
+          <div class="approval-icon">⚠️</div>
+          <h2>Approval Required</h2>
+          <p>Please review and confirm this action</p>
+        </div>
+        <div class="approval-details" id="approvalDetails">
+          <!-- Details will be populated dynamically -->
+        </div>
+        <div class="approval-actions">
+          <button class="approval-btn reject-btn" id="rejectBtn">
+            ❌ Reject
+          </button>
+          <button class="approval-btn approve-btn" id="approveBtn">
+            ✅ Approve
+          </button>
+        </div>
+        <div class="timeout-warning">
+          ⏱️ Auto-reject in <span id="countdown">60</span> seconds
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // WebSocket connection
+      let ws = null;
+      let currentApprovalId = null;
+      let countdownTimer = null;
+
+      // DOM elements
+      const statusDot = document.getElementById("statusDot");
+      const statusText = document.getElementById("statusText");
+      const commandInput = document.getElementById("commandInput");
+      const executeBtn = document.getElementById("executeBtn");
+      const activityLog = document.getElementById("activityLog");
+      const previewContainer = document.getElementById("previewContainer");
+      const approvalModal = document.getElementById("approvalModal");
+      const approvalDetails = document.getElementById("approvalDetails");
+      const approveBtn = document.getElementById("approveBtn");
+      const rejectBtn = document.getElementById("rejectBtn");
+      const startBtn = document.getElementById("startBtn");
+      const stopBtn = document.getElementById("stopBtn");
+
+      // Connect to WebSocket
+      function connect() {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          updateStatus(true);
+          addLog("Connected to FinAgent server", "success");
+        };
+
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          handleMessage(data);
+        };
+
+        ws.onclose = () => {
+          updateStatus(false);
+          addLog("Disconnected from server. Reconnecting...", "error");
+          setTimeout(connect, 3000);
+        };
+
+        ws.onerror = (error) => {
+          console.error("WebSocket error:", error);
+          addLog("Connection error", "error");
+        };
+      }
+
+      // Update connection status
+      function updateStatus(connected) {
+        if (connected) {
+          statusDot.classList.add("connected");
+          statusText.textContent = "Connected";
+        } else {
+          statusDot.classList.remove("connected");
+          statusText.textContent = "Disconnected";
+        }
+      }
+
+      // Handle WebSocket messages
+      function handleMessage(data) {
+        switch (data.type) {
+          case "status":
+            addLog(data.message, "info");
+            break;
+          case "screenshot":
+            updatePreview(data.screenshot);
+            break;
+          case "approval_request":
+            showApprovalModal(data.request);
+            break;
+          case "task_update":
+            addLog(`Task: ${data.task.status}`, "info");
+            break;
+          case "error":
+            addLog(data.message, "error");
+            break;
+        }
+      }
+
+      // Add log entry
+      function addLog(message, type = "info") {
+        const entry = document.createElement("div");
+        entry.className = `log-entry ${type}`;
+
+        const timestamp = new Date().toLocaleTimeString();
+        entry.innerHTML = `
+                <div class="timestamp">${timestamp}</div>
+                <div class="message">${message}</div>
+            `;
+
+        activityLog.insertBefore(entry, activityLog.firstChild);
+
+        // Keep only last 50 entries
+        while (activityLog.children.length > 50) {
+          activityLog.removeChild(activityLog.lastChild);
+        }
+      }
+
+      // Update browser preview
+      function updatePreview(screenshot) {
+        previewContainer.innerHTML = `
+                <img src="data:image/png;base64,${screenshot}" class="preview-image" alt="Browser Preview">
+            `;
+      }
+
+      // Show approval modal
+      function showApprovalModal(request) {
+        currentApprovalId = request.id;
+
+        // Populate details
+        approvalDetails.innerHTML = "";
+        for (const [key, value] of Object.entries(request.details)) {
+          const row = document.createElement("div");
+          row.className = "detail-row";
+          row.innerHTML = `
+                    <span class="detail-label">${key}:</span>
+                    <span class="detail-value">${value}</span>
+                `;
+          approvalDetails.appendChild(row);
+        }
+
+        // Show modal
+        approvalModal.classList.add("active");
+
+        // Start countdown
+        startCountdown();
+      }
+
+      // Hide approval modal
+      function hideApprovalModal() {
+        approvalModal.classList.remove("active");
+        currentApprovalId = null;
+        if (countdownTimer) {
+          clearInterval(countdownTimer);
+          countdownTimer = null;
+        }
+      }
+
+      // Countdown timer
+      function startCountdown() {
+        let seconds = 60;
+        const countdownEl = document.getElementById("countdown");
+
+        countdownTimer = setInterval(() => {
+          seconds--;
+          countdownEl.textContent = seconds;
+
+          if (seconds <= 0) {
+            clearInterval(countdownTimer);
+            handleApproval(false);
+          }
+        }, 1000);
+      }
+
+      // Handle approval response
+      function handleApproval(approved) {
+        if (!currentApprovalId) return;
+
+        fetch("/api/approve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            request_id: currentApprovalId,
+            approved: approved,
+          }),
+        });
+
+        addLog(
+          `Action ${approved ? "approved" : "rejected"}`,
+          approved ? "success" : "warning"
+        );
+        hideApprovalModal();
+      }
+
+      // Execute command
+      async function executeCommand() {
+        const command = commandInput.value.trim();
+        if (!command) return;
+
+        addLog(`Command: ${command}`, "info");
+        commandInput.value = "";
+        executeBtn.disabled = true;
+
+        try {
+          const response = await fetch("/api/execute", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ command }),
+          });
+
+          const data = await response.json();
+          if (data.status === "executing") {
+            addLog("Command sent for execution", "success");
+          }
+        } catch (error) {
+          addLog("Failed to send command", "error");
+        } finally {
+          executeBtn.disabled = false;
+        }
+      }
+
+      // Start agent
+      async function startAgent() {
+        try {
+          const response = await fetch("/api/start", { method: "POST" });
+          const data = await response.json();
+          addLog("Agent started", "success");
+        } catch (error) {
+          addLog("Failed to start agent", "error");
+        }
+      }
+
+      // Stop agent
+      async function stopAgent() {
+        try {
+          const response = await fetch("/api/stop", { method: "POST" });
+          const data = await response.json();
+          addLog("Agent stopped", "warning");
+        } catch (error) {
+          addLog("Failed to stop agent", "error");
+        }
+      }
+
+      // Event listeners
+      executeBtn.addEventListener("click", executeCommand);
+      commandInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") executeCommand();
+      });
+
+      document.querySelectorAll(".quick-cmd").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          commandInput.value = btn.dataset.cmd;
+          commandInput.focus();
+        });
+      });
+
+      approveBtn.addEventListener("click", () => handleApproval(true));
+      rejectBtn.addEventListener("click", () => handleApproval(false));
+      startBtn.addEventListener("click", startAgent);
+      stopBtn.addEventListener("click", stopAgent);
+
+      // Initialize
+      connect();
+    </script>
+  </body>
+</html>

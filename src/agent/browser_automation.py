@@ -411,7 +411,8 @@ class BrowserAutomation:
                 await asyncio.sleep(0.5)
             
             # Wait for the button to be available
-            await self.page.wait_for_selector("[data-action='pay-bills']", timeout=5000)            await self.page.click("[data-action='pay-bills']")
+            await self.page.wait_for_selector("[data-action='pay-bills']", timeout=5000)
+            await self.page.click("[data-action='pay-bills']")
             await self.page.wait_for_selector("#pay-bills-page.active, #bill-pay-form", timeout=3000)
             
             return ActionResult(
