@@ -1,6 +1,7 @@
 # Environment
 .env
 .env.example
+.env.*
 
 # Python
 venv/
@@ -48,6 +49,16 @@ yarn-error.log*
 # React build
 src/dummy-bank/dist/
 src/dummy-bank/.vite/
+
+# Session and log files
+logs/
+sessions/
+
+# Documentation (keep only README)
+*.pdf
+finagent.md
+IMPROVEMENT_AREAS.md
+FinAgent_Round1_*
 
 # OS
 .DS_Store
