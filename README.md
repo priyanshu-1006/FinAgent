@@ -11,7 +11,7 @@
 
 _Execute complex financial tasks through natural language with human-in-the-loop safety_
 
-**IIT Bombay Techfest Hackathon × Jio Financial Services**
+**Google and Developers Club Event**
 
 ---
 
@@ -358,7 +358,7 @@ pytest tests/test_intent_parser.py
 
 <div align="center">
 
-### Built with ❤️ for IIT Bombay Techfest × Jio Financial Services
+### Built with ❤️ for Google and Developers Club Event
 
 [![GitHub](https://img.shields.io/badge/View_on-GitHub-181717?style=for-the-badge&logo=github)](https://github.com/your-repo/finagent)
 
