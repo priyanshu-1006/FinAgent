@@ -229,11 +229,14 @@ async def start_agent():
     """Start the agent"""
     global agent
     
-    if agent.is_running:
-        return {"status": "already_running"}
-    
-    await agent.start()
-    return {"status": "started"}
+    try:
+        if agent.is_running:
+            return {"status": "already_running"}
+        
+        await agent.start()
+        return {"status": "started", "bank_url": agent.config.bank_url}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 
 @app.post("/api/stop")
@@ -241,11 +244,14 @@ async def stop_agent():
     """Stop the agent"""
     global agent
     
-    if not agent.is_running:
-        return {"status": "not_running"}
-    
-    await agent.stop()
-    return {"status": "stopped"}
+    try:
+        if not agent.is_running:
+            return {"status": "not_running"}
+        
+        await agent.stop()
+        return {"status": "stopped"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 
 @app.get("/api/status")
@@ -254,9 +260,14 @@ async def get_status():
     global agent
     
     if not agent:
-        return {"is_running": False}
+        return {"is_running": False, "error": "Agent not initialized"}
     
-    return await agent.get_status()
+    try:
+        status = await agent.get_status()
+        status["bank_url"] = agent.config.bank_url
+        return status
+    except Exception as e:
+        return {"is_running": False, "error": str(e)}
 
 
 @app.post("/api/execute")

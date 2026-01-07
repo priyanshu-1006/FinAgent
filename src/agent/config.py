@@ -69,11 +69,11 @@ class Config:
     # Which AI model to use: "openai" or "gemini"
     ai_provider: str = "gemini"
     openai_model: str = "gpt-4o-mini"
-    gemini_model: str = "gemini-3-flash-preview"
+    gemini_model: str = "gemini-2.0-flash"
     
     # Vision Model Settings (for UI element detection)
     vision_enabled: bool = True
-    vision_model: str = "gemini-3-flash-preview"
+    vision_model: str = "gemini-2.0-flash"
     
     # Browser Settings
     browser_type: str = "chromium"
@@ -98,12 +98,15 @@ class Config:
         self.gemini_api_keys = get_gemini_api_keys()
         
         self.ai_provider = os.getenv("AI_PROVIDER", "gemini")
-        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
-        self.vision_model = os.getenv("VISION_MODEL", "gemini-3-flash-preview")
+        # Use stable model names that are guaranteed to work
+        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+        self.vision_model = os.getenv("VISION_MODEL", "gemini-2.0-flash")
         
         self.browser_type = os.getenv("BROWSER_TYPE", "chromium")
-        self.headless = os.getenv("HEADLESS", "false").lower() == "true"
-        self.slow_mo = int(os.getenv("SLOW_MO", "100"))
+        # Default to headless=true for production
+        self.headless = os.getenv("HEADLESS", "true").lower() == "true"
+        # Lower slow_mo for production
+        self.slow_mo = int(os.getenv("SLOW_MO", "50"))
         
         self.bank_url = os.getenv("BANK_URL", "http://localhost:8080")
         self.approval_timeout = int(os.getenv("APPROVAL_TIMEOUT", "60"))
