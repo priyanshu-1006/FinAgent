@@ -1,0 +1,24 @@
+# FinAgent - Render Deployment Configuration
+# For render.com deployment
+
+services:
+  # FinAgent API - requires Docker for Playwright
+  - type: web
+    name: finagent-api
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false  # Set manually in dashboard
+      - key: HEADLESS
+        value: true
+      - key: ENVIRONMENT
+        value: production
+      - key: BANK_URL
+        sync: false  # Set to your Vercel dummy-bank URL
+    autoDeploy: true
+    plan: starter  # $7/month - required for Docker
+
+  # Note: Deploy dummy-bank separately on Vercel (it's free there)

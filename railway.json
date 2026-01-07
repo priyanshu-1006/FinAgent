@@ -1,0 +1,12 @@
+{
+  "name": "finagent-api",
+  "build": {
+    "env": {
+      "PLAYWRIGHT_BROWSERS_PATH": "/app/.cache/ms-playwright"
+    }
+  },
+  "env": {
+    "HEADLESS": "true",
+    "ENVIRONMENT": "production"
+  }
+}
