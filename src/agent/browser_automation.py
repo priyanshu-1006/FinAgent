@@ -96,14 +96,21 @@ class BrowserAutomation:
     async def navigate(self, url: str = None) -> ActionResult:
         """Navigate to URL"""
         url = url or config.bank_url
+        print(f"🌐 Browser navigating to: {url}")
         try:
-            await self.page.goto(url, wait_until="networkidle")
+            # Increased timeout for production (Vercel can be slow on cold start)
+            await self.page.goto(url, wait_until="networkidle", timeout=60000)
+            
+            # Wait a bit for JavaScript to fully load
+            await asyncio.sleep(1)
+            
             return ActionResult(
                 success=True,
                 action="navigate",
                 message=f"Navigated to {url}"
             )
         except Exception as e:
+            print(f"❌ Navigation error: {str(e)}")
             return ActionResult(
                 success=False,
                 action="navigate",

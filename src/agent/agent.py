@@ -75,6 +75,7 @@ class FinAgent:
         """Initialize and start the agent"""
         
         print("🚀 Starting FinAgent...")
+        print(f"🌐 Target bank URL: {self.config.bank_url}")
         
         # Log session start
         self.audit_logger.log(
@@ -108,7 +109,18 @@ class FinAgent:
         self.orchestrator.on_task_complete = self._on_task_complete
         
         # Navigate to bank
-        await self.browser.navigate()
+        print(f"🌐 Navigating to: {self.config.bank_url}")
+        nav_result = await self.browser.navigate()
+        print(f"📍 Navigation result: {nav_result.message}")
+        
+        # Send initial screenshot to UI
+        if self.on_screenshot:
+            try:
+                screenshot = await self.browser.take_screenshot()
+                await self.on_screenshot(screenshot)
+                print("📸 Initial screenshot sent")
+            except Exception as e:
+                print(f"⚠️ Failed to send initial screenshot: {e}")
         
         # Start auto-save for session
         await self.session_manager.start_auto_save()
