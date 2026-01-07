@@ -98,8 +98,8 @@ class Config:
         self.gemini_api_keys = get_gemini_api_keys()
         
         self.ai_provider = os.getenv("AI_PROVIDER", "gemini")
-        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash-exp")
-        self.vision_model = os.getenv("VISION_MODEL", "gemini-2.0-flash-exp")
+        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
+        self.vision_model = os.getenv("VISION_MODEL", "gemini-3-flash-preview")
         
         self.browser_type = os.getenv("BROWSER_TYPE", "chromium")
         self.headless = os.getenv("HEADLESS", "false").lower() == "true"

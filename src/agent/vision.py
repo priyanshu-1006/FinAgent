@@ -164,7 +164,7 @@ class VisionModule:
                 # Check for model not found (fallback to stable model)
                 if "not found" in error_str or "404" in error_str:
                     print(f"⚠️ Model {self.current_model_name} not available, falling back...")
-                    fallback_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+                    fallback_models = ["gemini-3-flash-preview", "gemini-2.0-flash-exp", "gemini-1.5-pro"]
                     for fallback in fallback_models:
                         if fallback != self.current_model_name:
                             try:

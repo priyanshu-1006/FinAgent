@@ -310,7 +310,7 @@ class BrowserAutomation:
     # ===== Banking Actions =====
     
     async def login(self, username: str = "demo_user", password: str = "demo123") -> ActionResult:
-        """Log in to the banking portal"""
+        """Log in to the banking portal using Vision AI"""
         try:
             # Check if already on the page, if not navigate
             if "localhost:8080" not in self.page.url:
@@ -319,33 +319,43 @@ class BrowserAutomation:
             # Wait for page to fully load
             await asyncio.sleep(0.5)
             
-            # Check if already logged in (dashboard visible)
-            dashboard_visible = await self.page.query_selector("#dashboard-page.active")
-            if dashboard_visible:
-                self.is_logged_in = True
-                balance_text = await self.page.text_content("#account-balance")
-                return ActionResult(
-                    success=True,
-                    action="login",
-                    message="Already logged in",
-                    screenshot=await self.take_screenshot(),
-                    data={"username": username, "balance": balance_text}
-                )
+            # Check if already logged in using vision
+            screenshot = await self.take_screenshot()
+            if self.vision and self.vision.client:
+                page_analysis = await self.vision.analyze_page(screenshot)
+                if "dashboard" in page_analysis.page_type.lower() or "logged" in page_analysis.current_state.lower():
+                    self.is_logged_in = True
+                    return ActionResult(
+                        success=True,
+                        action="login",
+                        message="Already logged in",
+                        screenshot=screenshot,
+                        vision_used=True,
+                        data={"username": username}
+                    )
             
-            # Wait for login form
-            await self.page.wait_for_selector("#login-form", timeout=5000)
+            # Use vision to fill username field
+            print("   👁️ Using Vision AI to login...")
+            username_result = await self.type_with_vision("username input field", username)
+            if not username_result.success:
+                print("   ⚠️ Vision failed for username, trying selector fallback...")
+                await self.page.fill("#username", username)
             
-            # Clear and fill credentials
-            await self.page.fill("#username", "")
-            await self.page.fill("#username", username)
-            await self.page.fill("#password", "")
-            await self.page.fill("#password", password)
+            await asyncio.sleep(0.2)
             
-            # Wait a bit before clicking
+            # Use vision to fill password field
+            password_result = await self.type_with_vision("password input field", password)
+            if not password_result.success:
+                print("   ⚠️ Vision failed for password, trying selector fallback...")
+                await self.page.fill("#password", password)
+            
             await asyncio.sleep(0.3)
             
-            # Click login button and wait for navigation/state change
-            await self.page.click("#login-btn")
+            # Use vision to click login button
+            login_result = await self.click_with_vision("login button", "button")
+            if not login_result.success:
+                print("   ⚠️ Vision failed for login button, trying selector fallback...")
+                await self.page.click("#login-btn")
             
             # Wait for dashboard to become active
             await asyncio.sleep(1.5)  # Give JavaScript time to process
@@ -402,7 +412,7 @@ class BrowserAutomation:
             )
     
     async def navigate_to_pay_bills(self) -> ActionResult:
-        """Navigate to bill payment page"""
+        """Navigate to bill payment page using Vision AI"""
         try:            # Ensure we're on the dashboard first
             dashboard = await self.page.query_selector("#dashboard-page.active")
             if not dashboard:
@@ -410,7 +420,20 @@ class BrowserAutomation:
                 await self.go_back_to_dashboard()
                 await asyncio.sleep(0.5)
             
-            # Wait for the button to be available
+            # Use vision to click Pay Bills button
+            result = await self.click_with_vision("Pay Bills button", "button")
+            if result.success:
+                await asyncio.sleep(0.5)
+                return ActionResult(
+                    success=True,
+                    action="navigate",
+                    message="Navigated to Pay Bills page using Vision",
+                    screenshot=await self.take_screenshot(),
+                    vision_used=True
+                )
+            
+            # Fallback to selector
+            print("   ⚠️ Vision failed, using selector fallback...")
             await self.page.wait_for_selector("[data-action='pay-bills']", timeout=5000)
             await self.page.click("[data-action='pay-bills']")
             await self.page.wait_for_selector("#pay-bills-page.active, #bill-pay-form", timeout=3000)
@@ -425,7 +448,7 @@ class BrowserAutomation:
             return ActionResult(False, "navigate", f"Navigation failed: {str(e)}")
     
     async def pay_bill(self, biller: str = "Adani Power", consumer_number: str = "1234567890", amount: float = 1000) -> ActionResult:
-        """Pay a utility bill"""
+        """Pay a utility bill using Vision AI"""
         try:
             # First ensure we're on the pay bills page
             pay_bills_page = await self.page.query_selector("#pay-bills-page.active")
@@ -433,30 +456,29 @@ class BrowserAutomation:
                 await self.navigate_to_pay_bills()
                 await asyncio.sleep(0.5)
             
-            # Select biller - try by value first, then by label
-            try:
-                await self.page.select_option("#biller-select", value="adani-power")
-            except:
-                try:
-                    await self.page.select_option("#biller-select", label=biller)
-                except:
-                    # Just select the first option
-                    await self.page.select_option("#biller-select", index=1)
+            print("   👁️ Using Vision AI to fill bill payment form...")
+            
+            # Use vision to fill consumer number
+            consumer_result = await self.type_with_vision("consumer number input field", consumer_number)
+            if not consumer_result.success:
+                print("   ⚠️ Vision failed, using selector fallback...")
+                await self.page.fill("#consumer-number", consumer_number)
             
             await asyncio.sleep(0.3)
             
-            # Fill consumer number
-            await self.page.fill("#consumer-number", "")
-            await self.page.fill("#consumer-number", consumer_number)
-            
-            # Fill amount
-            await self.page.fill("#bill-amount", "")
-            await self.page.fill("#bill-amount", str(int(amount)))
+            # Use vision to fill amount
+            amount_result = await self.type_with_vision("bill amount input field", str(int(amount)))
+            if not amount_result.success:
+                print("   ⚠️ Vision failed, using selector fallback...")
+                await self.page.fill("#bill-amount", str(int(amount)))
             
             await asyncio.sleep(0.5)
             
-            # Click pay button
-            await self.page.click("#pay-bill-btn")
+            # Use vision to click pay button
+            pay_result = await self.click_with_vision("Pay Bill button", "button")
+            if not pay_result.success:
+                print("   ⚠️ Vision failed, using selector fallback...")
+                await self.page.click("#pay-bill-btn")
             
             # Wait for confirmation modal
             await asyncio.sleep(1)
@@ -490,27 +512,30 @@ class BrowserAutomation:
             )
     
     async def navigate_to_fund_transfer(self) -> ActionResult:
-        """Navigate to fund transfer page"""
+        """Navigate to fund transfer page using Vision AI"""
         try:
             # Check if we're on the dashboard
             dashboard = await self.page.query_selector("#dashboard-page.active")
             if not dashboard:
-                print("   Dashboard not active, checking if it exists...")
-                dashboard_exists = await self.page.query_selector("#dashboard-page")
-                if not dashboard_exists:
-                    return ActionResult(False, "navigate", "Dashboard page not found. Please ensure you're logged in.")
-                
-                # Try to go back
-                try:
-                    back_btn = await self.page.query_selector(".btn-back")
-                    if back_btn:
-                        await back_btn.click()
-                        await asyncio.sleep(0.5)
-                except:
-                    pass
+                print("   Dashboard not active, navigating back...")
+                await self.go_back_to_dashboard()
+                await asyncio.sleep(0.5)
             
-            # Wait for the fund-transfer button
-            print("   Waiting for fund-transfer button...")
+            # Use vision to click Fund Transfer button
+            print("   👁️ Using Vision AI to navigate to Fund Transfer...")
+            result = await self.click_with_vision("Fund Transfer button or Transfer Money button", "button")
+            if result.success:
+                await asyncio.sleep(0.5)
+                return ActionResult(
+                    success=True,
+                    action="navigate",
+                    message="Navigated to Fund Transfer page using Vision",
+                    screenshot=await self.take_screenshot(),
+                    vision_used=True
+                )
+            
+            # Fallback to selector
+            print("   ⚠️ Vision failed, using selector fallback...")
             await self.page.wait_for_selector("[data-action='fund-transfer']", timeout=5000, state="visible")
             await self.page.click("[data-action='fund-transfer']")
             await self.page.wait_for_selector("#fund-transfer-page.active, #transfer-form", timeout=3000)
@@ -526,7 +551,7 @@ class BrowserAutomation:
             return ActionResult(False, "navigate", f"Navigation failed: {str(e)}", screenshot=screenshot)
     
     async def fund_transfer(self, recipient: str = "Mom", account: str = "9876543210", ifsc: str = "JFIN0001234", amount: float = 1000) -> ActionResult:
-        """Transfer money to another account"""
+        """Transfer money to another account using Vision AI"""
         try:
             # First ensure we're on the transfer page
             transfer_page = await self.page.query_selector("#fund-transfer-page.active")
@@ -534,20 +559,40 @@ class BrowserAutomation:
                 await self.navigate_to_fund_transfer()
                 await asyncio.sleep(0.5)
             
-            # Fill transfer form
-            await self.page.fill("#recipient-name", "")
-            await self.page.fill("#recipient-name", recipient)
-            await self.page.fill("#recipient-account", "")
-            await self.page.fill("#recipient-account", account)
-            await self.page.fill("#recipient-ifsc", "")
-            await self.page.fill("#recipient-ifsc", ifsc)
-            await self.page.fill("#transfer-amount", "")
-            await self.page.fill("#transfer-amount", str(int(amount)))
+            print("   👁️ Using Vision AI to fill transfer form...")
+            
+            # Use vision to fill recipient name
+            result = await self.type_with_vision("recipient name field", recipient)
+            if not result.success:
+                await self.page.fill("#recipient-name", recipient)
+            
+            await asyncio.sleep(0.2)
+            
+            # Use vision to fill account number
+            result = await self.type_with_vision("account number field", account)
+            if not result.success:
+                await self.page.fill("#recipient-account", account)
+            
+            await asyncio.sleep(0.2)
+            
+            # Use vision to fill IFSC code
+            result = await self.type_with_vision("IFSC code field", ifsc)
+            if not result.success:
+                await self.page.fill("#recipient-ifsc", ifsc)
+            
+            await asyncio.sleep(0.2)
+            
+            # Use vision to fill amount
+            result = await self.type_with_vision("transfer amount field", str(int(amount)))
+            if not result.success:
+                await self.page.fill("#transfer-amount", str(int(amount)))
             
             await asyncio.sleep(0.5)
             
-            # Click transfer button
-            await self.page.click("#transfer-btn")
+            # Use vision to click transfer button
+            result = await self.click_with_vision("Transfer button", "button")
+            if not result.success:
+                await self.page.click("#transfer-btn")
             
             # Wait for confirmation modal
             await asyncio.sleep(1)
@@ -594,36 +639,31 @@ class BrowserAutomation:
             return ActionResult(False, "select_beneficiary", f"Failed: {str(e)}")
     
     async def navigate_to_buy_gold(self) -> ActionResult:
-        """Navigate to digital gold page"""
+        """Navigate to digital gold page using Vision AI"""
         try:
             # Check if we're on the dashboard first
             dashboard = await self.page.query_selector("#dashboard-page.active")
             if not dashboard:
-                print("   Dashboard not active, checking if it exists...")
-                dashboard_exists = await self.page.query_selector("#dashboard-page")
-                if not dashboard_exists:
-                    return ActionResult(False, "navigate", "Dashboard page not found. Please ensure you're logged in.")
-                
-                # Dashboard exists but not active - try to activate it
-                print("   Attempting to navigate back to dashboard...")
-                try:
-                    back_btn = await self.page.query_selector(".btn-back")
-                    if back_btn:
-                        await back_btn.click()
-                        await asyncio.sleep(0.5)
-                except:
-                    pass
+                print("   Dashboard not active, navigating back...")
+                await self.go_back_to_dashboard()
+                await asyncio.sleep(0.5)
             
-            # Wait and check for the buy-gold button
-            print("   Waiting for buy-gold button...")
-            try:
-                await self.page.wait_for_selector("[data-action='buy-gold']", timeout=5000, state="visible")
-            except:
-                # Take a screenshot to debug
-                screenshot = await self.take_screenshot()
-                return ActionResult(False, "navigate", f"Buy gold button not found. Dashboard may not be loaded.", screenshot=screenshot)
+            # Use vision to click Buy Gold button
+            print("   👁️ Using Vision AI to navigate to Buy Gold...")
+            result = await self.click_with_vision("Buy Gold button or Digital Gold button", "button")
+            if result.success:
+                await asyncio.sleep(0.5)
+                return ActionResult(
+                    success=True,
+                    action="navigate",
+                    message="Navigated to Digital Gold page using Vision",
+                    screenshot=await self.take_screenshot(),
+                    vision_used=True
+                )
             
-            # Click the button
+            # Fallback to selector
+            print("   ⚠️ Vision failed, using selector fallback...")
+            await self.page.wait_for_selector("[data-action='buy-gold']", timeout=5000, state="visible")
             await self.page.click("[data-action='buy-gold']")
             await self.page.wait_for_selector("#buy-gold-page.active, #gold-form", timeout=3000)
             
@@ -638,7 +678,7 @@ class BrowserAutomation:
             return ActionResult(False, "navigate", f"Navigation failed: {str(e)}", screenshot=screenshot)
     
     async def buy_gold(self, amount: float = None, grams: float = None) -> ActionResult:
-        """Buy digital gold"""
+        """Buy digital gold using Vision AI"""
         try:
             # First ensure we're on the gold page
             gold_page = await self.page.query_selector("#buy-gold-page.active")
@@ -646,16 +686,25 @@ class BrowserAutomation:
                 await self.navigate_to_buy_gold()
                 await asyncio.sleep(0.5)
             
+            print("   👁️ Using Vision AI to fill gold purchase form...")
+            
             if grams:
-                # Switch to grams mode
-                await self.page.click("[data-type='grams']")
+                # Switch to grams mode using vision
+                result = await self.click_with_vision("grams tab or grams option", "button")
+                if not result.success:
+                    await self.page.click("[data-type='grams']")
+                
                 await asyncio.sleep(0.3)
-                await self.page.fill("#gold-grams", "")
-                await self.page.fill("#gold-grams", str(grams))
+                
+                # Fill grams using vision
+                result = await self.type_with_vision("gold grams input field", str(grams))
+                if not result.success:
+                    await self.page.fill("#gold-grams", str(grams))
             elif amount:
-                # Amount mode (default)
-                await self.page.fill("#gold-amount", "")
-                await self.page.fill("#gold-amount", str(int(amount)))
+                # Fill amount using vision (default mode)
+                result = await self.type_with_vision("gold amount input field", str(int(amount)))
+                if not result.success:
+                    await self.page.fill("#gold-amount", str(int(amount)))
             else:
                 # Just navigate to the page without filling values
                 return ActionResult(
@@ -670,8 +719,10 @@ class BrowserAutomation:
             
             await asyncio.sleep(0.5)
             
-            # Click buy button
-            await self.page.click("#buy-gold-btn")
+            # Use vision to click buy button
+            result = await self.click_with_vision("Buy Gold button or Purchase button", "button")
+            if not result.success:
+                await self.page.click("#buy-gold-btn")
             
             # Wait for confirmation modal
             await asyncio.sleep(1)
