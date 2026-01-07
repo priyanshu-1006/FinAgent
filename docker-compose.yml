@@ -1,0 +1,123 @@
+# FinAgent - Docker Compose Configuration
+# For local development and production deployment
+
+version: '3.8'
+
+services:
+  # ============================================
+  # FinAgent Backend API
+  # ============================================
+  finagent-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finagent-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      # AI Configuration
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_API_KEY_FALLBACK_1=${GEMINI_API_KEY_FALLBACK_1:-}
+      - GEMINI_API_KEY_FALLBACK_2=${GEMINI_API_KEY_FALLBACK_2:-}
+      - AI_PROVIDER=${AI_PROVIDER:-gemini}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash-exp}
+      - VISION_MODEL=${VISION_MODEL:-gemini-2.0-flash-exp}
+      # Browser Configuration
+      - HEADLESS=${HEADLESS:-true}
+      - BROWSER_TYPE=${BROWSER_TYPE:-chromium}
+      - SLOW_MO=${SLOW_MO:-50}
+      # Bank Configuration
+      - BANK_URL=${BANK_URL:-http://dummy-bank:8080}
+      # Security
+      - APPROVAL_TIMEOUT=${APPROVAL_TIMEOUT:-60}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # Production settings
+      - ENVIRONMENT=production
+    volumes:
+      - finagent-logs:/app/logs
+      - finagent-sessions:/app/sessions
+    networks:
+      - finagent-network
+    depends_on:
+      - dummy-bank
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ============================================
+  # Dummy Bank (Demo/Testing)
+  # ============================================
+  dummy-bank:
+    build:
+      context: ./src/dummy-bank
+      dockerfile: Dockerfile
+    container_name: dummy-bank
+    restart: unless-stopped
+    ports:
+      - "${BANK_PORT:-8080}:8080"
+    networks:
+      - finagent-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ============================================
+  # Nginx Reverse Proxy (Production)
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: finagent-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - finagent-network
+    depends_on:
+      - finagent-api
+    profiles:
+      - production
+
+  # ============================================
+  # Redis (Session Cache - Optional)
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: finagent-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - finagent-network
+    command: redis-server --appendonly yes
+    profiles:
+      - production
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  finagent-network:
+    driver: bridge
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  finagent-logs:
+    driver: local
+  finagent-sessions:
+    driver: local
+  redis-data:
+    driver: local

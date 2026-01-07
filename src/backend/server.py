@@ -187,6 +187,43 @@ async def root():
     return {"message": "FinAgent API", "docs": "/docs"}
 
 
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring and container orchestration"""
+    import platform
+    
+    health_status = {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.0",
+        "environment": os.getenv("ENVIRONMENT", "development"),
+        "checks": {
+            "agent_initialized": agent is not None,
+            "agent_running": agent.is_running if agent else False,
+            "browser_connected": agent.browser.page is not None if agent and agent.is_running else False,
+        },
+        "system": {
+            "python_version": platform.python_version(),
+            "platform": platform.system(),
+        }
+    }
+    
+    # Determine overall health
+    if not agent:
+        health_status["status"] = "degraded"
+        health_status["message"] = "Agent not initialized"
+    
+    return health_status
+
+
+@app.get("/ready")
+async def readiness_check():
+    """Readiness probe - checks if the service is ready to accept traffic"""
+    if agent and agent.is_running:
+        return {"ready": True}
+    return {"ready": False, "reason": "Agent not running"}
+
+
 @app.post("/api/start")
 async def start_agent():
     """Start the agent"""
