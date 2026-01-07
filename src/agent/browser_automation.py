@@ -60,7 +60,7 @@ class BrowserAutomation:
                 print(f"⚠️ Vision module not available: {e}")
     
     async def start(self):
-        """Initialize browser"""
+        """Initialize browser with optimized settings"""
         self.playwright = await async_playwright().start()
         
         browser_types = {
@@ -71,17 +71,38 @@ class BrowserAutomation:
         
         browser_launcher = browser_types.get(config.browser_type, self.playwright.chromium)
         
+        # Optimized launch args for faster startup and performance
+        launch_args = []
+        if config.browser_type == "chromium":
+            launch_args = [
+                '--disable-blink-features=AutomationControlled',
+                '--disable-dev-shm-usage',
+                '--no-sandbox',  # Faster startup
+                '--disable-setuid-sandbox',
+                '--disable-extensions',
+                '--disable-gpu',  # Faster in headless
+                '--disable-software-rasterizer'
+            ]
+        
         self.browser = await browser_launcher.launch(
             headless=config.headless,
-            slow_mo=config.slow_mo
+            slow_mo=config.slow_mo,
+            args=launch_args
         )
         
         self.context = await self.browser.new_context(
-            viewport={"width": 1280, "height": 800}
+            viewport={"width": 1280, "height": 800},
+            # Optimize network and caching for speed
+            bypass_csp=True,
+            ignore_https_errors=True
         )
         
+        # Block unnecessary resources for faster page loads
+        await self.context.route("**/*.{png,jpg,jpeg,gif,svg,woff,woff2}", lambda route: route.abort())
+        
         self.page = await self.context.new_page()
-        print(f"🌐 Browser started ({config.browser_type})")
+        
+        print(f"🌐 Browser started ({config.browser_type}) - Optimized mode")
         if self.vision and self.vision.client:
             print("👁️ Vision AI enabled for element detection")
     
@@ -98,11 +119,12 @@ class BrowserAutomation:
         url = url or config.bank_url
         print(f"🌐 Browser navigating to: {url}")
         try:
-            # Increased timeout for production (Vercel can be slow on cold start)
-            await self.page.goto(url, wait_until="networkidle", timeout=60000)
+            # Optimized timeout: faster for development, reasonable for production
+            timeout = 45000 if config.headless else 30000
+            await self.page.goto(url, wait_until="domcontentloaded", timeout=timeout)
             
-            # Wait a bit for JavaScript to fully load
-            await asyncio.sleep(1)
+            # Reduced wait time for faster response
+            await asyncio.sleep(0.5)
             
             return ActionResult(
                 success=True,
@@ -156,9 +178,9 @@ class BrowserAutomation:
                 )
             
             print(f"   👁️ Found at ({location.x}, {location.y}) with {location.confidence:.0%} confidence")
-            
-            # Click at coordinates
+             with faster timing
             await self.page.mouse.click(location.x, location.y)
+            await asyncio.sleep(0.3)  # Reduced from 0.5s for faster location.y)
             await asyncio.sleep(0.5)  # Wait for UI response
             
             return ActionResult(

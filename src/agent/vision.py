@@ -109,16 +109,19 @@ class VisionModule:
             print(f"⚠️ Failed to switch API key: {e}")
         return False
     
-    async def _call_with_retry(self, prompt: str, image_bytes: bytes, max_retries: int = 3):
+    async def _call_with_retry(self, prompt: str, image_bytes: bytes, max_retries: int = 2):
         """
         Call the model with automatic retry, exponential backoff, and key rotation
         
-        Uses exponential backoff with jitter to avoid thundering herd problem
+        Optimized for speed:
+        - Reduced max retries from 3 to 2
+        - Lower temperature for faster responses
+        - Faster backoff timing
         """
         from google.genai import types
         
         last_error = None
-        base_delay = 2  # Start with 2 seconds
+        base_delay = 1.5  # Reduced from 2 to 1.5 seconds
         
         start_time = time.time()
         
@@ -153,8 +156,8 @@ class VisionModule:
                 
                 # Check for rate limit or quota errors
                 if "quota" in error_str or "rate" in error_str or "limit" in error_str or "429" in error_str:
-                    # Calculate delay with exponential backoff and jitter
-                    delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+                    # Calculate delay with exponential backoff and jitter (faster)
+                    delay = min(base_delay * (1.8 ** attempt) + random.uniform(0, 0.3), 4.0)  # Cap at 4s
                     print(f"⚠️ API rate limit hit, waiting {delay:.1f}s before retry...")
                     await asyncio.sleep(delay)
                     
@@ -235,29 +238,21 @@ class VisionModule:
         
         start_time = time.time()
         
-        prompt = f"""Analyze this banking website screenshot and find the UI element described below.
+        # Shorter, optimized prompt for faster processing
+        prompt = f"""Find "{element_description}" {element_type} in this screenshot.
 
-TASK: Find the "{element_description}" {element_type}
-
-INSTRUCTIONS:
-1. Look carefully at the screenshot
-2. Find the element that matches the description
-3. Estimate the CENTER coordinates (x, y) of the element
-4. The image is approximately 1280x800 pixels
-
-RESPOND IN THIS EXACT JSON FORMAT:
+Return JSON:
 {{
-    "found": true or false,
+    "found": true/false,
     "element_type": "{element_type}",
-    "description": "what you found",
-    "x": center_x_coordinate,
-    "y": center_y_coordinate,
-    "confidence": 0.0 to 1.0,
-    "selector_hint": "CSS selector if visible (like #login-btn or .action-card)"
+    "description": "brief description",
+    "x": center_x_pixel,
+    "y": center_y_pixel,
+    "confidence": 0-1,
+    "selector_hint": "CSS selector if visible"
 }}
 
-If element is NOT found, set found=false and x,y to 0.
-ONLY return the JSON, no other text."""
+Image size: ~1280x800px. If not found: found=false, x=0, y=0."""
 
         try:
             image_bytes = base64.b64decode(screenshot_base64)
@@ -329,32 +324,21 @@ ONLY return the JSON, no other text."""
                 suggestions=[]
             )
         
-        prompt = """Analyze this banking website screenshot and describe:
+        # Shorter prompt for faster analysis
+        prompt = """Analyze this banking screenshot:
 
-1. PAGE TYPE: What type of page is this? (login, dashboard, payment, transfer, gold_purchase, profile, etc.)
+1. PAGE TYPE: login/dashboard/payment/transfer/gold_purchase/profile/etc
+2. STATE: logged_out/logged_in/form_empty/modal_open/success/error
+3. ELEMENTS: Interactive items [{"type": "button", "label": "Login", "x": 640, "y": 400}]
+4. ACTIONS: What can be done?
 
-2. CURRENT STATE: What is the current state? (logged_out, logged_in, form_empty, form_filled, modal_open, success_shown, error_shown)
-
-3. KEY ELEMENTS: List all interactive elements visible with their approximate positions:
-   - Buttons (with text labels)
-   - Input fields (with labels)
-   - Links/Navigation items
-   - Modals or popups
-
-4. SUGGESTIONS: What actions can be taken on this page?
-
-RESPOND IN THIS EXACT JSON FORMAT:
+JSON only:
 {
-    "page_type": "type_here",
-    "current_state": "state_here",
-    "elements": [
-        {"type": "button", "label": "Login", "x": 640, "y": 400},
-        {"type": "input", "label": "Username", "x": 640, "y": 300}
-    ],
-    "suggestions": ["Click Login button", "Enter username"]
-}
-
-ONLY return the JSON, no other text."""
+    "page_type": "type",
+    "current_state": "state",
+    "elements": [{"type": "button", "label": "text", "x": 0, "y": 0}],
+    "suggestions": ["action1", "action2"]
+}"""
 
         try:
             image_bytes = base64.b64decode(screenshot_base64)
